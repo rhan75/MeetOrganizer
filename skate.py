@@ -44,12 +44,8 @@ def get_skater_info(membership_number) -> dict:
     qry = f'select skater_ID, dob, club_ID from Skater where member_number = {membership_number}'
     #send qry and catch the result
     dob = 'something'
-    skater_age = get_skater_age(dob=dob)
+    skater_age = find_skating_age(dob=dob)
     # Using skater age, determine division
-    division_qry = f'select division_ID from Division where min_age = {skater_age} or max_age = {skater_age}'
-    cursor 
-    if  
-    class_qry = f''
     skater_info = {}
     skater_ID = 1 # Get skater_ID from skater table
     division_ID = 1 # Get skater's division using dob
@@ -61,7 +57,6 @@ def get_skater_info(membership_number) -> dict:
     skater_info['seed'] = seed_time
     return skater_info
 
-def 
 
 '''
 Take race_rasult and race_info and update race_details
