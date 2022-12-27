@@ -71,8 +71,6 @@ Lane = Table(
     'Lane', meta,
     Column('lane_ID', Integer, primary_key = True),
     Column('name', String),
-    Column('number', Integer),
-    Column('location', String),
 )
 
 Race_Style = Table(
@@ -91,14 +89,21 @@ Race = Table(
     Column('team', Boolean),
 )
 
-
-
 Meet = Table(
     'Meet', meta,
     Column('meet_ID', Integer, primary_key = True),
     Column('name', String),
     Column('start_date', Date),
     Column('end_date', Date),
+)
+
+Meet_Skater = Table(
+    'Meet_Skater', meta,
+    Column('ms_ID', Integer, primary_key = True),
+    Column('meet_ID', Integer, ForeignKey('Meet.meet_ID'), nullable=False),
+    Column('skater_ID', Integer, ForeignKey('Skater.skater_ID'), nullable=False),
+    Column('division_ID', Integer, ForeignKey('Division.division_ID'), nullable=False),
+    Column('gender_ID', Integer, ForeignKey('Gender.gender_ID'), nullable=False),
 )
 
 Heat = Table(
@@ -112,10 +117,19 @@ Race_Heat_Schedule = Table(
     Column('rhs_ID', Integer, primary_key = True),
     Column('race_ID', Integer, ForeignKey('Race.race_ID'), nullable=False),
     Column('heat_ID', Integer, ForeignKey('Heat.heat_ID'), nullable=False),
-    Column('meetID_ID', Integer, ForeignKey('Meet.meet_ID'), nullable=False),
+    Column('meet_ID', Integer, ForeignKey('Meet.meet_ID'), nullable=False),
     Column('name', String),
     Column('total_skaters', Integer),
     Column('team_race', Boolean),
+)
+
+Race_Heat_Schedule_Detail = Table(
+    'Race_Heat_Schedule_Detail', meta,
+    Column('rhsd_ID', Integer, primary_key = True),
+    Column('rhs_ID', Integer, ForeignKey('Race_Heat_Schedule.rhs_ID'), nullable=False),
+    Column('st_ID', Integer, ForeignKey('Skater_Team.st_ID'), nullable=True),
+    Column('skater_ID', Integer, ForeignKey('Skater.skater_ID'), nullable=True),
+    Column('lane_ID', Integer, ForeignKey('Lane.lane_ID'), nullable=False),
 )
 
 Race_Heat_Result = Table(
@@ -125,27 +139,29 @@ Race_Heat_Result = Table(
     Column('race_timestamp', Time)
 )
 
-
-Race_Heat_Sechedule_Detail = Table(
-    'Race_Heat_Schedule_Detail', meta,
-    Column('rhsd_ID', Integer, primary_key = True),
-    Column('rhr_ID', Integer, ForeignKey('Race_Heat_Result.rhr_ID'), nullable=False),
-    Column('st_ID', Integer, ForeignKey('Skater_Team.st_ID'), nullable=True),
-    Column('skater_ID', Integer, ForeignKey('Skater.skater_ID'), nullable=True),
-    Column('lane_ID', Integer, ForeignKey('Lane.lane_ID'), nullable=False),
-    Column('race_time', Time),
-    Column('rank', Integer),
+Manual_Time = Table(
+    'Manual_Time', meta,
+    Column('mt_ID', Integer, primary_key = True),
+    Column('Manual_Time1', Time),
+    Column('Manual_Time2', Time),
+    Column('Manual_Time3', Time),
+    Column('Manual_Time4', Time),
 )
 
 Race_Heat_Result_Detail = Table(
     'Race_Heat_Result_Detail', meta,
     Column('rhrd_ID', Integer, primary_key = True),
-    Column('rhs_ID', Integer, ForeignKey('Race_Heat_Schedule.rhs_ID'), nullable=False),
+    Column('rhr_ID', Integer, ForeignKey('Race_Heat_Result.rhr_ID'), nullable=False),
     Column('st_ID', Integer, ForeignKey('Skater_Team.st_ID'), nullable=True),
     Column('skater_ID', Integer, ForeignKey('Skater.skater_ID'), nullable=True),
     Column('lane_ID', Integer, ForeignKey('Lane.lane_ID'), nullable=False),
     Column('status_ID', Integer, ForeignKey('Status.status_ID'), nullable=False),
-    Column('race_time', Time),
+    Column('division_ID', Integer, ForeignKey('Division.division_ID'), nullable=False),
+    Column('gender_ID', Integer, ForeignKey('Gender.gender_ID'), nullable=False),
+    Column('mt_ID', Integer, ForeignKey('Manual_Time.mt_ID'), nullable=True),
+    Column('photo_time', Time),
+    Column('photo_time_in_seconds', Float),
+    Column('rank', Integer),
 )
 
 Status = Table(
@@ -174,7 +190,7 @@ Race_Division_Result = Table(
     Column('meet_ID', Integer, ForeignKey('Meet.meet_ID'), nullable=False),
     Column('division_ID', Integer, ForeignKey('Division.division_ID'), nullable=False),
     Column('race_ID', Integer, ForeignKey('Race.race_ID'), nullable=False),
-    Column('dc_ID', Integer, ForeignKey('Division_Class.dc_ID'), nullable=False),
+    #Column('dc_ID', Integer, ForeignKey('Division_Class.dc_ID'), nullable=False),
     Column('gender_ID', Integer, ForeignKey('Gender.gender_ID'), nullable=False),
     Column('name', String),
 )
@@ -184,6 +200,7 @@ Race_Division_Result_Detail = Table(
     Column('rdrd_ID', Integer, primary_key = True),
     Column('rdr_ID', Integer, ForeignKey('Race_Division_Result.rdr_ID'), nullable=False),
     Column('rhrd_ID', Integer, ForeignKey('Race_Heat_Result_Detail.rhrd_ID'), nullable=False),
+    Column('photo_time_in_seconds', Float), #in seconds
     Column('rank', Integer),
     Column('score', Integer),
 )
