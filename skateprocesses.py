@@ -39,17 +39,37 @@ def get_heat_schedule(lines: list) -> list:  # Checked
     return heats
 
 def update_meet_skater(meet_ID: int, skater_ID: int, engine: Engine) -> None:
-    exist_check = f'select exists(select 1 from "Meet_Skater" where "meet_ID" = \'{meet_ID}\' and "skater_ID" = \'{skater_ID}\');'
+    exist_check = (
+        f'select exists'
+        f'(select 1 '
+        f'from "Meet_Skater" '
+        f'where "meet_ID" = \'{meet_ID}\' '
+        f'and "skater_ID" = \'{skater_ID}\');'
+    )
     if not engine.execute(exist_check).fetchall()[0][0]:
-        gender_age = pd.read_sql_query(f'select dob, "gender_ID" from "Skater" where "skater_ID" = {skater_ID};', engine)
+        gender_age_qry = (
+            f'select dob, "gender_ID" '
+            f'from "Skater" '
+            f'where "skater_ID" = {skater_ID};'
+        )
+        gender_age = pd.read_sql_query(gender_age_qry, engine)
         gender_ID = gender_age.iloc[0]['gender_ID']
         age = find_skating_age(gender_age.iloc[0]['dob'])
         division_ID = find_division(age, engine)
-        qry = f'insert into "Meet_Skater"("meet_ID", "skater_ID", "division_ID", "gender_ID") values ({meet_ID}, {skater_ID}, {division_ID}, {gender_ID})'
+        qry = (
+            f'insert into "Meet_Skater"("meet_ID", "skater_ID", "division_ID", "gender_ID") '
+            f'values ({meet_ID}, {skater_ID}, {division_ID}, {gender_ID})'
+        )
         engine.execute(qry)
 
 def find_division(age:int, engine: Engine) -> int:
-    division = pd.read_sql_query(f'select "division_ID" from "Division" where min_age <= {age} and max_age >= {age};', engine)
+    qry = (
+        f'select "division_ID" '
+        f'from "Division" '
+        f'where min_age <= {age} '
+        f'and max_age >= {age};'
+    )
+    division = pd.read_sql_query(qry, engine)
     return division.iloc[0]['division_ID']
 
 
@@ -60,7 +80,17 @@ def create_race_division_result(meet_ID: int, engine: Engine) -> None:  # Checke
     # lookup_tables =  [ 'Race', 'Gender', 'Division', 'Meet']
     # for table in lookup_tables:
     #     f'table.lower() = 
-    division_genders_race = pd.read_sql_query(f'select distinct rhrd."division_ID", rhrd."gender_ID", rhs."race_ID" from "Race_Heat_Schedule" as rhs left join "Race_Heat_Result" as rhr on rhs."rhs_ID" = rhr."rhs_ID" left join "Race_Heat_Result_Detail" as rhrd on rhr."rhr_ID" = rhrd."rhr_ID" where "meet_ID" = {meet_ID} order by rhrd."division_ID"', engine)
+    division_genders_race_qry = (
+        f'select distinct rhrd."division_ID", rhrd."gender_ID", rhs."race_ID" '
+        f'from "Race_Heat_Schedule" as rhs '
+        f'left join "Race_Heat_Result" as rhr '
+        f'on rhs."rhs_ID" = rhr."rhs_ID" '
+        f'left join "Race_Heat_Result_Detail" as rhrd '
+        f'on rhr."rhr_ID" = rhrd."rhr_ID" '
+        f'where "meet_ID" = {meet_ID} '
+        f'order by rhrd."division_ID"'
+    )
+    division_genders_race = pd.read_sql_query(division_genders_race_qry, engine)
     race = pd.read_sql_query('select * from "Race";', con=engine)
     gender = pd.read_sql_query('select * from "Gender";', con=engine)
     division = pd.read_sql_query('select * from "Division";', con=engine)
@@ -70,36 +100,30 @@ def create_race_division_result(meet_ID: int, engine: Engine) -> None:  # Checke
         gender_ID = row['gender_ID']
         race_ID = row['race_ID']
         #print(meet_ID, division_ID, gender_ID, race_ID)
-        exist_check = f'select exists(select 1 from "Race_Division_Result" where "division_ID" = {division_ID} and "meet_ID" = {meet_ID} and "gender_ID" = {gender_ID} and "race_ID" = {race_ID});'
+        exist_check = (
+            f'select exists'
+            f'(select 1 '
+            f'from "Race_Division_Result" '
+            f'where "division_ID" = {division_ID} '
+            f'and "meet_ID" = {meet_ID} '
+            f'and "gender_ID" = {gender_ID} '
+            f'and "race_ID" = {race_ID});'
+        )
         if not engine.execute(exist_check).fetchall()[0][0]:
-            name = f"{meet[meet['meet_ID']==meet_ID].iloc[0]['name']} {gender[gender['gender_ID'] == gender_ID].iloc[0]['name']} {division[division['division_ID']==division_ID].iloc[0]['name']} {race[race['race_ID']==race_ID].iloc[0]['name']}"
-            qry = f'insert into "Race_Division_Result"("division_ID", "meet_ID", "race_ID", "gender_ID", name) values ({division_ID}, {meet_ID}, {race_ID}, {gender_ID}, \'{name}\')'
+            name = (
+                f"{meet[meet['meet_ID']==meet_ID].iloc[0]['name']} "
+                f"{gender[gender['gender_ID'] == gender_ID].iloc[0]['name']} "
+                f"{division[division['division_ID']==division_ID].iloc[0]['name']} "
+                f"{race[race['race_ID']==race_ID].iloc[0]['name']}"
+            )
+            qry = (
+                f'insert into "Race_Division_Result"("division_ID", "meet_ID", "race_ID", "gender_ID", name) '
+                f'values ({division_ID}, {meet_ID}, {race_ID}, {gender_ID}, \'{name}\')'
+            )
             engine.execute(qry)
   
 # Checked
 def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engine) -> None:
-    '''
-{'race1': {'heat_info': {'heat': '1',
-   'round': '1',
-   'race': '2',
-   'date': '2022-12-24',
-   'meet_name': '2022-12-24 PSSC Challenge',
-   'distance': '85',
-   'race_style': 'Pack Race'},
-  'skaters': [{'skater_num': '249',
-    'lane_num': 'A1',
-    'first_name': 'Aria',
-    'last_name': 'Shin',
-    'club': 'PSSC'},
-   {'skater_num': '247',
-    'lane_num': 'A2',
-    'first_name': 'Jonathan',
-    'last_name': 'Lee',
-    'club': 'PSSC'}]},
-'race2' : {'heat_info'...........
-}
-    '''
-
     race_style = pd.read_sql_query('select * from "Race_Style";', con=engine)
     skater = pd.read_sql_query('select * from "Skater";', con=engine)
     meet = pd.read_sql_query('select * from "Meet";', con=engine)
@@ -125,9 +149,17 @@ def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engi
                        f"Heat {each_heat['heat_info']['heat']}"].iloc[0]['heat_ID']
         heat_name = f"{meet_name}: {race_name} Heat {each_heat['heat_info']['heat']}"
         # Check if heat_name exist
-        exist_check = f'select exists(select 1 from "Race_Heat_Schedule" where name = \'{heat_name}\');'
+        exist_check = (
+            f'select exists'
+            f'(select 1 '
+            f'from "Race_Heat_Schedule" '
+            f'where name = \'{heat_name}\');'
+        )
         if not engine.execute(exist_check).fetchall()[0][0]:
-            qry = f'insert into "Race_Heat_Schedule"("race_ID", "heat_ID", "meet_ID", name, total_skaters, team_race) values ({race_ID}, {heat_ID}, {meet_ID}, \'{heat_name}\', {total_skaters}, {team_bool})'
+            qry = (
+                f'insert into "Race_Heat_Schedule"("race_ID", "heat_ID", "meet_ID", name, total_skaters, team_race) '
+                f'values ({race_ID}, {heat_ID}, {meet_ID}, \'{heat_name}\', {total_skaters}, {team_bool})'
+            )
             engine.execute(qry)
         rhs_ID = engine.execute(
             f'select "rhs_ID" from "Race_Heat_Schedule" where name = \'{heat_name}\';').fetchall()[0][0]
@@ -140,9 +172,18 @@ def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engi
                 heat_skater['skater_num'])].iloc[0]['skater_ID']
             lane_ID = lane[lane['name'] ==
                            heat_skater['lane_num']].iloc[0]['lane_ID']
-            exist_check = f'select exists(select 1 from "Race_Heat_Schedule_Detail" where "rhs_ID" = \'{rhs_ID}\' and "skater_ID" = \'{skater_ID}\');'
+            exist_check = (
+                f'select exists'
+                f'(select 1 '
+                f'from "Race_Heat_Schedule_Detail" '
+                f'where "rhs_ID" = \'{rhs_ID}\' '
+                f'and "skater_ID" = \'{skater_ID}\');'
+            )
             if not engine.execute(exist_check).fetchall()[0][0]:
-                qry = f'insert into "Race_Heat_Schedule_Detail"("rhs_ID", "st_ID", "skater_ID", "lane_ID") values ({rhs_ID}, {st_ID}, {skater_ID}, {lane_ID})'
+                qry = (
+                    f'insert into "Race_Heat_Schedule_Detail"("rhs_ID", "st_ID", "skater_ID", "lane_ID") '
+                    f'values ({rhs_ID}, {st_ID}, {skater_ID}, {lane_ID})'
+                )
                 engine.execute(qry)
             update_meet_skater(meet_ID, skater_ID, engine)
             
@@ -191,22 +232,34 @@ def create_race_heat_result(result_file: str, engine: Engine) -> dict:  # Checke
     else:
         time_type = 'automatic'
     timestamp = pd.to_datetime(timestamp).strftime('%H:%M:%S')
-    exist_check = f'select exists(select 1 from "Race_Heat_Result" where "rhs_ID" = \'{rhs_ID}\');'
+    exist_check = (
+        f'select exists'
+        f'(select 1 '
+        f'from "Race_Heat_Result" '
+        f'where "rhs_ID" = \'{rhs_ID}\');'
+    )
     if not engine.execute(exist_check).fetchall()[0][0]:
-        qry = f'insert into "Race_Heat_Result"("rhs_ID", race_timestamp) values ({rhs_ID}, \'{timestamp}\')'
+        qry = (
+            f'insert into "Race_Heat_Result"("rhs_ID", race_timestamp) '
+            f'values ({rhs_ID}, \'{timestamp}\')'
+        )
         engine.execute(qry)
-    rhr_ID = engine.execute(
-        f'select "rhr_ID" from "Race_Heat_Result" where "rhs_ID" = \'{rhs_ID}\';').fetchall()[0][0]
+    rhr_ID_qry = (
+        f'select "rhr_ID" '
+        f'from "Race_Heat_Result" '
+        f'where "rhs_ID" = \'{rhs_ID}\';'
+    )
+    rhr_ID = engine.execute(rhr_ID_qry).fetchall()[0][0]
     return {'rhs_ID': rhs_ID, 'rhr_ID': rhr_ID, 'time_type': time_type}
 
 
 def create_race_heat_result_detail(result_file: str, rhs_rhr: dict, engine: Engine) -> None:  # Checked
-    rhs_ID = rhs_rhr['rhs_ID']
+    # rhs_ID = rhs_rhr['rhs_ID']
     rhr_ID = rhs_rhr['rhr_ID']
     time_type = rhs_rhr['time_type']
-    race = pd.read_sql_query(f'select "race_ID", "meet_ID" from "Race_Heat_Schedule" where "rhs_ID" = {rhs_ID};', engine)
-    race_ID = race.iloc[0]['race_ID']
-    meet_ID = race.iloc[0]['meet_ID']
+    # race = pd.read_sql_query(f'select "race_ID", "meet_ID" from "Race_Heat_Schedule" where "rhs_ID" = {rhs_ID};', engine)
+    # race_ID = race.iloc[0]['race_ID']
+    # meet_ID = race.iloc[0]['meet_ID']
 
     skater = pd.read_sql_query('select * from "Skater";', con=engine)
     lane = pd.read_sql_query('select * from "Lane";', con=engine)
@@ -239,9 +292,21 @@ def create_race_heat_result_detail(result_file: str, rhs_rhr: dict, engine: Engi
             skater[skater['skater_ID'] == skater_ID].iloc[0]['dob'])
         division_ID = division[(division['min_age'] <= age) & (
             division['max_age'] >= age)].iloc[0]['division_ID']
-        exist_check = f'select exists(select 1 from "Race_Heat_Result_Detail" where "rhr_ID" = \'{rhr_ID}\' and "skater_ID" = \'{skater_ID}\');'
+        exist_check = (
+            f'select exists'
+            f'(select 1 '
+            f'from "Race_Heat_Result_Detail" '
+            f'where "rhr_ID" = \'{rhr_ID}\' '
+            f'and "skater_ID" = \'{skater_ID}\');'
+        )
         if not engine.execute(exist_check).fetchall()[0][0]:
-            qry = f'insert into "Race_Heat_Result_Detail"("rhr_ID", "skater_ID", "lane_ID", "status_ID", "division_ID", "gender_ID", time_type, time, time_in_seconds, rank) values ({rhr_ID}, {skater_ID}, {lane_ID}, {status_ID}, {division_ID}, {gender_ID}, \'{time_type}\', \'{time}\',{time_in_seconds}, {rank})'
+            qry = (
+                f'insert into "Race_Heat_Result_Detail"'
+                f'("rhr_ID", "skater_ID", "lane_ID", "status_ID", "division_ID", '
+                f'"gender_ID", time_type, time, time_in_seconds, rank) '
+                f'values ({rhr_ID}, {skater_ID}, {lane_ID}, {status_ID}, {division_ID}, '
+                f'{gender_ID}, \'{time_type}\', \'{time}\',{time_in_seconds}, {rank})'
+            )
             engine.execute(qry)
             # create_race_division_result(meet_ID, engine)
             # create_race_division_result_detail(meet_ID, race_ID, engine)
@@ -282,10 +347,17 @@ def create_race_division_result_detail(meet_ID: int, race_ID: int, engine: Engin
                                                & (race_division_result['gender_ID'] == gender_ID)].iloc[0]['rdr_ID'])
                 # print(row)
                 exist_check = (
-                    f'select exists(select 1 from "Race_Division_Result_Detail" where "rdr_ID" = \'{rdr_ID}\' and "rhrd_ID" = \'{rhrd_ID}\');')
+                    f'select exists'
+                    f'(select 1 '
+                    f'from "Race_Division_Result_Detail" '
+                    f'where "rdr_ID" = \'{rdr_ID}\' '
+                    f'and "rhrd_ID" = \'{rhrd_ID}\');'
+                )
                 if not engine.execute(exist_check).fetchall()[0][0]:
                     qry = (
-                        f'insert into "Race_Division_Result_Detail"("rdr_ID", "rhrd_ID", time_in_seconds) values ({rdr_ID}, {rhrd_ID}, {time_in_seconds})')
+                        f'insert into "Race_Division_Result_Detail"("rdr_ID", "rhrd_ID", time_in_seconds) '
+                        f'values ({rdr_ID}, {rhrd_ID}, {time_in_seconds})'
+                    )
                     engine.execute(qry)
 
 
@@ -323,7 +395,19 @@ def generate_division_report(meet_ID: int, engine: Engine) -> None:
         gender_ID = each_result.iloc[4]
         division_ID = each_result.iloc[2]
         report_name = generate_division_report_name(meet_ID, division_ID, race_ID, gender_ID, engine)
-        report = pd.read_sql_query(f'select skater.first_name as "First Name", skater.last_name as "Last Name", club.abbreviation as "Club", rhrd.time as "Time", rdrd.rank as "Rank", rdrd.score as "Score" from "Race_Division_Result_Detail" as rdrd left join "Race_Heat_Result_Detail" as rhrd on rdrd."rhrd_ID" = rhrd."rhrd_ID" left join "Skater" as skater on rhrd."skater_ID" = skater."skater_ID" left join "Club" as club on skater."club_ID" = club."club_ID" where rdrd."rdr_ID" = {rdr_ID} order by rdrd.rank;', con=engine)        
+        report_qry = (
+            f'select skater.first_name as "First Name", skater.last_name as "Last Name", club.abbreviation as "Club", '
+            f'rhrd.time as "Time", rdrd.rank as "Rank", rdrd.score as "Score" '
+            f'from "Race_Division_Result_Detail" as rdrd '
+            f'left join "Race_Heat_Result_Detail" as rhrd '
+            f'on rdrd."rhrd_ID" = rhrd."rhrd_ID" '
+            f'left join "Skater" as skater '
+            f'on rhrd."skater_ID" = skater."skater_ID" '
+            f'left join "Club" as club '
+            f'on skater."club_ID" = club."club_ID" '
+            f'where rdrd."rdr_ID" = {rdr_ID} order by rdrd.rank;'        
+        )
+        report = pd.read_sql_query(report_qry, con=engine)        
         html = report.to_html(index=False)
         title = """
             <html>
@@ -369,31 +453,61 @@ def generate_division_report_name(meet_ID: int, division_ID: int, race_ID: int, 
 
 
 def create_meet_division_result(meet_ID: int, engine: Engine) -> None:
-    division_genders = pd.read_sql_query(f'select distinct "division_ID", "gender_ID" from "Meet_Skater" where "meet_ID" = {meet_ID};', con=engine)
+    division_genders_qry = (
+        f'select distinct "division_ID", "gender_ID" '
+        f'from "Meet_Skater" where "meet_ID" = {meet_ID};'
+    )
+    division_genders = pd.read_sql_query(division_genders_qry, con=engine)
     meet_name = pd.read_sql_query(f'select name from "Meet" where "meet_ID" = {meet_ID};', con=engine)
     for idx, row in division_genders.iterrows():
         division_ID, gender_ID = row[0], row[1]
         division_name = pd.read_sql_query(f'select name from "Division" where "division_ID" = {division_ID};', con=engine)
         gender_name = pd.read_sql_query(f'select name from "Gender" where "gender_ID" = {gender_ID};', con=engine)
         report_name = f"{meet_name.iloc[0]['name']} {gender_name.iloc[0]['name']} {division_name.iloc[0]['name']} Result"
-        exist_check = (f'select exists(select 1 from "Meet_Division_Result" where "meet_ID" = {meet_ID} and "division_ID" = {division_ID} and "gender_ID" = {gender_ID});')
+        exist_check = (
+            f'select exists'
+            f'(select 1 '
+            f'from "Meet_Division_Result" '
+            f'where "meet_ID" = {meet_ID} and "division_ID" = {division_ID} and "gender_ID" = {gender_ID});'
+        )
         if not engine.execute(exist_check).fetchall()[0][0]:
-            qry = (f'insert into "Meet_Division_Result"("meet_ID", "division_ID", "gender_ID", name) values ({meet_ID}, {division_ID}, {gender_ID}, \'{report_name}\')')
+            qry = (
+                f'insert into "Meet_Division_Result"("meet_ID", "division_ID", "gender_ID", name) '
+                f"values ({meet_ID}, {division_ID}, {gender_ID}, '{report_name}')"
+            )
             engine.execute(qry)
 
 def create_meet_division_result_detail(meet_ID: int, engine: Engine) -> None:
-    division_genders = pd.read_sql_query(f'select distinct "mdr_ID", "division_ID", "gender_ID" from "Meet_Division_Result" where "meet_ID" = {meet_ID};', con=engine)
+    division_genders_qry = (
+        f'select distinct "mdr_ID", "division_ID", "gender_ID" '
+        f'from "Meet_Division_Result" '
+        f'where "meet_ID" = {meet_ID};'
+    )
+    division_genders = pd.read_sql_query(division_genders_qry, con=engine)
     for idx, row in division_genders.iterrows():
         event_scores = {}
         mdr_ID, division_ID, gender_ID = row[0], row[1], row[2]
         #print(idx)
         #print(meet_ID, division_ID, gender_ID)
-        races = pd.read_sql_query(f'select distinct "rdr_ID" from "Race_Division_Result" where "meet_ID" = {meet_ID} and "division_ID" = {division_ID} and "gender_ID" = {gender_ID};', con=engine)
+        races_qry = (
+            f'select distinct "rdr_ID" '
+            f'from "Race_Division_Result" '
+            f'where "meet_ID" = {meet_ID} '
+            f'and "division_ID" = {division_ID} '
+            f'and "gender_ID" = {gender_ID};'
+        )
+        races = pd.read_sql_query(races_qry, con=engine)
         #print(races)
         for idx, each_race in races.iterrows():
             rdr_ID = each_race[0]
-
-            records = pd.read_sql_query(f'select rhrd."skater_ID", rdrd."score" from "Race_Division_Result_Detail" as rdrd left join "Race_Heat_Result_Detail" as rhrd on rdrd."rhrd_ID" = rhrd."rhrd_ID" where "rdr_ID" = {rdr_ID};', engine)
+            records_qry = (
+                f'select rhrd."skater_ID", rdrd."score" '
+                f'from "Race_Division_Result_Detail" as rdrd '
+                f'left join "Race_Heat_Result_Detail" as rhrd '
+                f'on rdrd."rhrd_ID" = rhrd."rhrd_ID" '
+                f'where "rdr_ID" = {rdr_ID};'
+            )
+            records = pd.read_sql_query(records_qry, engine)
             for idx, record in records.iterrows():
                 skater_ID, score = record[0], record[1]
                 if skater_ID in event_scores.keys():
@@ -402,9 +516,15 @@ def create_meet_division_result_detail(meet_ID: int, engine: Engine) -> None:
                     event_scores[skater_ID] = score
         for skater_ID in event_scores.keys():
             #print(key, event_scores[key])
-            exist_check = (f'select exists(select 1 from "Meet_Division_Result_Detail" where "mdr_ID" = {mdr_ID} and "skater_ID" = {skater_ID});')
+            exist_check = (
+                f'select exists('
+                f'select 1 from "Meet_Division_Result_Detail" where "mdr_ID" = {mdr_ID} and "skater_ID" = {skater_ID});'
+            )
             if not engine.execute(exist_check).fetchall()[0][0]:
-                qry = (f'insert into "Meet_Division_Result_Detail"("mdr_ID", "skater_ID", total_score) values ({mdr_ID}, {skater_ID}, {event_scores[skater_ID]})')
+                qry = (
+                    f'insert into "Meet_Division_Result_Detail"("mdr_ID", "skater_ID", total_score) '
+                    f'values ({mdr_ID}, {skater_ID}, {event_scores[skater_ID]})'
+                )
                 engine.execute(qry)
 
 
@@ -428,7 +548,17 @@ def generate_meet_division_report(meet_ID: int, engine: Engine) -> None:
     for idx, each_mdr in mdr.iterrows():
         mdr_ID = each_mdr[0]
         report_name = each_mdr[1]
-        report = pd.read_sql_query(f'select skater.first_name as "First Name", skater.last_name as "Last Name", club.abbreviation as "Club", mdrd.rank as "Rank", mdrd.total_score as "Score" from "Meet_Division_Result_Detail" as mdrd left join "Skater" as skater on mdrd."skater_ID" = skater."skater_ID" left join "Club" as club on skater."club_ID" = club."club_ID" where mdrd."mdr_ID" = {mdr_ID} order by mdrd.rank;', con=engine)        
+        qry = (
+            f'select skater.first_name as "First Name", skater.last_name as "Last Name", '
+            f'club.abbreviation as "Club", mdrd.rank as "Rank", mdrd.total_score as "Score" '
+            f'from "Meet_Division_Result_Detail" as mdrd '
+            f'left join "Skater" as skater '
+            f'on mdrd."skater_ID" = skater."skater_ID" '
+            f'left join "Club" as club '
+            f'on skater."club_ID" = club."club_ID" '
+            f'where mdrd."mdr_ID" = {mdr_ID} order by mdrd.rank;'
+        )
+        report = pd.read_sql_query(qry, con=engine)        
         html = report.to_html(index=False)
         title = """
             <html>
