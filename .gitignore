@@ -130,9 +130,8 @@ dmypy.json
 # Config Files
 *.ini
 *.conf
-*.txt
 *.toml
-
+.gitignore
 # Auxilary folderes
 config/
 db/
