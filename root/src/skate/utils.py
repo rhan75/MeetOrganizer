@@ -1,9 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Date, Boolean, Time, Float, ForeignKey, delete
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.base import Engine
 import pandas as pd
 from datetime import timedelta, date 
-from weasyprint import HTML
 
 def find_skating_age(dob: date) -> int:
     current_date = date.today()
