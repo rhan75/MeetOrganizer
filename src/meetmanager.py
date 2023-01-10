@@ -13,7 +13,7 @@ from gui.divisioneventresultlayout import GenerateDivisionEventResultLayout
 from gui.meetdivisionresultlayout import GenerateMeetDivisionResultLayout
 
 
-config_file = '/home/rhan/codes/dev/Skating/MeetOrganizer/config/config.toml'
+config_file = '/home/rhan/codes/dev/Skating/backup/config/config.toml'
 with open(config_file, 'r') as conf:
     config = toml.load(conf)
 engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")

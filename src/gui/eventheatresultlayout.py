@@ -17,7 +17,7 @@ class GenerateEventHeatResultLayout(BaseLayout):
         comp_text = tk.StringVar()
 
         self.title_label = tk.Label(self.main_frame, text='Generate Heat Result for Event', font=('helvetica', 24))
-        self.title_label.grid(column=0, row=0)
+        self.title_label.grid(column=0, row=0, sticky='nsew')
 
         self.status_text = tk.Text(self.main_frame, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
@@ -86,7 +86,7 @@ class GenerateEventHeatResultLayout(BaseLayout):
             event_text.set('select competition')
 
             self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
-            self.event_combobox_button.grid(column=4, row=3, sticky='nsew')
+            self.event_combobox_button.grid(column=2, row=3, sticky='nsew')
         else:
             msg = 'please select the competition.'
             self.insert_text('status_text', msg)
