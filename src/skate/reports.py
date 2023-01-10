@@ -1,40 +1,42 @@
 from sqlalchemy.engine.base import Engine
 import pandas as pd
-from weasyprint import HTML
+# from weasyprint import HTML
 
 '''
 Report Functions
 '''
 def generate_report(report_name: str, report_path: str, report: pd.DataFrame) -> None:
-        html = report.to_html(index=False)
-        title = """
-            <html>
-            <head>
-            <style>
-            thead {color: green;}
-            tbody {color: black;}
-            tfoot {color: red;}
+    html_file = f'{report_path}/{report_name}.html'
+    excel_file = f'{report_path}/{report_name}.xlsx'
+    report.to_excel(excel_file, index=False)
+    html = report.to_html(index=False)
+    title = """
+        <html>
+        <head>
+        <style>
+        thead {color: green;}
+        tbody {color: black;}
+        tfoot {color: red;}
 
-            table, th, td {
-            border: 1px solid black;
-            }
-            </style>
-            </head>
-            <body>
+        table, th, td {
+        border: 1px solid black;
+        }
+        </style>
+        </head>
+        <body>
 
-            <h4>
-            """ + report_name + "</h4>"
+        <h4>
+        """ + report_name + "</h4>"
 
-        end_html = """
-            </body>
-            </html>
-            """
-        html = title + html + end_html
-        html_file = f'{report_path}/{report_name}.html'
-        pdf_file = f'{report_path}/{report_name}.pdf'
-        with open(html_file, 'w') as file:
-            file.write(html)
-        HTML(html_file).write_pdf(pdf_file)
+    end_html = """
+        </body>
+        </html>
+        """
+    html = title + html + end_html
+
+    with open(html_file, 'w') as file:
+        file.write(html)
+    # HTML(html_file).write_pdf(pdf_file)
 
 #Generate list of record for the event
 def generate_event_schedule_list_repport(meet_ID: int, event: int, report_path: str, division_range: tuple, engine: Engine) -> None:
