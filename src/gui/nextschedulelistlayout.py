@@ -11,10 +11,12 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.create_widgets()
         self.low_division = None
         self.high_division = None
+        self.division_range = None
 
     def create_widgets(self):
 
         self.clear_all()
+        self.clear()
 
         comp_text = tk.StringVar()
 
@@ -40,7 +42,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.comp_combobox['values'] = self.meet['name'].to_list()
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
-        self.comp_combobox_button.grid(column=3, row=2, sticky='nsew')
+        self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
         self.button_frame = ttk.Frame(self.main_frame)
@@ -51,10 +53,10 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.button_submit.grid(column=0, row=6, sticky='nsew')
 
         self.button_clear = ttk.Button(self.button_frame, text='clear', command=self.reload_frame)
-        self.button_clear.grid(column=2, row=6, sticky='nsew')
+        self.button_clear.grid(column=1, row=6, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='close', command=self.root.destroy)
-        self.button_close.grid(column=4, row=6, sticky='nsew')
+        self.button_close.grid(column=2, row=6, sticky='nsew')
 
     def reload_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -62,9 +64,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.create_widgets()
 
     def generate_report(self):
-        division_range = (self.low_division, self.high_division)
-        print(division_range)
-        reports.generate_event_schedule_list_repport(self.meet_ID, self.event, self.folder_name, division_range, self.engine)
+        reports.generate_event_schedule_list_report(self.meet_ID, self.event, self.folder_name, self.division_range, self.engine)
         self.meet_name = self.meet[self.meet['meet_ID']==self.meet_ID]['name'][0]
         msg = f'Result for event {self.event} from {self.meet_name} has been generated in {self.folder_name}'
         self.insert_text('status_text', msg)
@@ -95,7 +95,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
             event_text.set('select competition')
 
             self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
-            self.event_combobox_button.grid(column=3, row=3, sticky='w')
+            self.event_combobox_button.grid(column=2, row=3, sticky='w')
         else:
             msg = 'please select the competition.'
             self.insert_text('status_text', msg)
@@ -134,6 +134,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
         high = division[division['name']== self.division_high_combobox.get()].head(1)
         self.low_division = low['division_ID'].iloc[0]
         self.high_division = high['division_ID'].iloc[0]
+        self.division_range = {'low_division': {'name':self.division_low_combobox.get(), 'division_ID':self.low_division}, 'high_division': {'name':self.division_high_combobox.get(), 'division_ID':self.high_division}}
         # print(self.low_division, self.high_division)
         # print(division[division['name']==low_div_name]['division_ID'][0])
         # self.low_division = division[division['name']==low_div_name]['division_ID'].iloc[0]
@@ -147,7 +148,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.report_label.grid(column=0, row=5, sticky='nsew')
 
         self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
-        self.report_text.grid(column=1, row=5, sticky='nsew', pady=10)
+        self.report_text.grid(column=1, row=5, sticky='nsew')
         # self.schedule_text.pack(side='left')
         self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.select_folder('report_text'))
-        self.browse_button.grid(column=4, row=5, sticky='nsew')
+        self.browse_button.grid(column=2, row=5, sticky='nsew')
