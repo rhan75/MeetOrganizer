@@ -12,7 +12,9 @@ class ImportScheduleLayout(BaseLayout):
 
     def create_widgets(self):
         # create the widgets for the import schedule layout
+
         self.clear_all()
+        self.clear()
         
         self.import_schedule_label = tk.Label(self.main_frame, text='Import Schedule', font=('Helvetica', 24))
         self.import_schedule_label.grid(column=0, row=0)
@@ -20,25 +22,25 @@ class ImportScheduleLayout(BaseLayout):
  
         # self.schedule_label.pack(side='left')
         self.schedule_text = tk.Text(self.main_frame,state='disabled',height=1)
-        self.schedule_text.grid(column=0, row=1, sticky='W', pady=10)
+        self.schedule_text.grid(column=0, row=1, sticky='nsew')
         # self.schedule_text.pack(side='left')
         self.browse_button = ttk.Button(self.main_frame,text='Browse', command=lambda: self.select_file('schedule_text'))
-        self.browse_button.grid(column=4, row=1, sticky='W')
+        self.browse_button.grid(column=1, row=1, sticky='nsew')
         # self.browse_button.pack(side='right')
 
         #Adding Submit / Export / Clear / Close buttons
         self.button_frame = ttk.Frame(self.main_frame)
-        self.button_frame.grid(column=0, row=2, sticky='W')
+        self.button_frame.grid(column=0, row=2, sticky='nsew')
 
         #Adding Submit / Export / Clear / Close buttons
         self.button_submit = ttk.Button(self.button_frame, text='Submit', command=lambda: self.process_schedule('schedule_text'))
-        self.button_submit.grid(column=0, row=2, sticky='W')
+        self.button_submit.grid(column=0, row=2, sticky='nsew')
 
         self.button_clear = ttk.Button(self.button_frame, text='Clear', command=lambda: self.clear_selection('schedule_text'))
-        self.button_clear.grid(column=2, row=2, sticky='W')
+        self.button_clear.grid(column=1, row=2, sticky='nsew')
 
-        self.button_close = ttk.Button(self.main_frame, text='Close', command=self.root.destroy)
-        self.button_close.grid(column=4, row=2, sticky='E')
+        self.button_close = ttk.Button(self.button_frame, text='Close', command=self.root.destroy)
+        self.button_close.grid(column=2, row=2, sticky='nsew')
 
     def process_schedule(self, textbox:str):
         if self.filename:

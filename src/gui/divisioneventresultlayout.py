@@ -13,11 +13,12 @@ class GenerateDivisionEventResultLayout(BaseLayout):
     def create_widgets(self):
 
         self.clear_all()
+        self.clear()
 
         comp_text = tk.StringVar()
 
         self.title_label = tk.Label(self.main_frame, text='Generate Division Result for Event', font=('helvetica', 24))
-        self.title_label.grid(column=0, row=0)
+        self.title_label.grid(column=0, row=0, sticky='nsew')
 
         self.status_text = tk.Text(self.main_frame, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
@@ -38,7 +39,7 @@ class GenerateDivisionEventResultLayout(BaseLayout):
         self.comp_combobox['values'] = self.meet['name'].to_list()
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
-        self.comp_combobox_button.grid(column=3, row=2, sticky='nsew')
+        self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
         self.button_frame = ttk.Frame(self.main_frame)
@@ -49,10 +50,10 @@ class GenerateDivisionEventResultLayout(BaseLayout):
         self.button_submit.grid(column=0, row=5, sticky='nsew')
 
         self.button_clear = ttk.Button(self.button_frame, text='clear', command=self.clear_selection('status_text'))
-        self.button_clear.grid(column=2, row=5, sticky='nsew')
+        self.button_clear.grid(column=1, row=5, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='close', command=self.root.destroy)
-        self.button_close.grid(column=4, row=5, sticky='nsew')
+        self.button_close.grid(column=2, row=5, sticky='nsew')
 
     def generate_report(self):
         reports.generate_division_report(self.meet_ID, self.event, self.folder_name, self.engine)
@@ -85,7 +86,7 @@ class GenerateDivisionEventResultLayout(BaseLayout):
             event_text.set('select competition')
 
             self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
-            self.event_combobox_button.grid(column=4, row=3, sticky='nsew')
+            self.event_combobox_button.grid(column=2, row=3, sticky='nsew')
         else:
             msg = 'please select the competition.'
             self.insert_text('status_text', msg)
@@ -101,7 +102,7 @@ class GenerateDivisionEventResultLayout(BaseLayout):
         self.report_label.grid(column=0, row=4, sticky='nsew')
 
         self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
-        self.report_text.grid(column=1, row=4, sticky='nsew', pady=10)
+        self.report_text.grid(column=1, row=4, sticky='nsew')
         # self.schedule_text.pack(side='left')
         self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.select_folder('report_text'))
-        self.browse_button.grid(column=4, row=4, sticky='nsew')
+        self.browse_button.grid(column=2, row=4, sticky='nsew')

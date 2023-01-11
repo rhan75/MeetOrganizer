@@ -13,6 +13,7 @@ class GenerateMeetDivisionResultLayout(BaseLayout):
     def create_widgets(self):
 
         self.clear_all()
+        self.clear()
 
         comp_text = tk.StringVar()
 
@@ -38,7 +39,7 @@ class GenerateMeetDivisionResultLayout(BaseLayout):
         self.comp_combobox['values'] = self.meet['name'].to_list()
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
-        self.comp_combobox_button.grid(column=3, row=2, sticky='nsew')
+        self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
         self.button_frame = ttk.Frame(self.main_frame)
@@ -49,10 +50,10 @@ class GenerateMeetDivisionResultLayout(BaseLayout):
         self.button_submit.grid(column=0, row=5, sticky='nsew')
 
         self.button_clear = ttk.Button(self.button_frame, text='clear', command=self.clear_selection('status_text'))
-        self.button_clear.grid(column=2, row=5, sticky='nsew')
+        self.button_clear.grid(column=1, row=5, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='close', command=self.root.destroy)
-        self.button_close.grid(column=4, row=5, sticky='nsew')
+        self.button_close.grid(column=2, row=5, sticky='nsew')
 
     def generate_report(self):
         utils.create_meet_division_result(self.meet_ID, self.engine)
@@ -75,10 +76,10 @@ class GenerateMeetDivisionResultLayout(BaseLayout):
             self.report_label.grid(column=0, row=4, sticky='nsew')
 
             self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
-            self.report_text.grid(column=1, row=4, sticky='nsew', pady=10)
+            self.report_text.grid(column=1, row=4, sticky='nsew')
             # self.schedule_text.pack(side='left')
             self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.select_folder('report_text'))
-            self.browse_button.grid(column=4, row=4, sticky='nsew')
+            self.browse_button.grid(column=2, row=4, sticky='nsew')
         else:
             msg = 'please select the competition.'
             self.insert_text('status_text', msg)

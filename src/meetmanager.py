@@ -6,7 +6,8 @@ import pandas as pd
 
 from gui.importschedulelayout import ImportScheduleLayout
 from gui.importresultlayout import ImportResultLayout
-from gui.processresult import ProcessResultLayout
+from gui.processdivisionresult import ProcessDivisionResultLayout
+from gui.processmeetresult import ProcessMeetResultLayout 
 from gui.eventheatresultlayout import GenerateEventHeatResultLayout
 from gui.nextschedulelistlayout import GenerateNextScheduleListLayout
 from gui.divisioneventresultlayout import GenerateDivisionEventResultLayout
@@ -25,10 +26,17 @@ class App:
         self.root = root
         self.create_menu()
         self.create_main_frame()
+        self.meet = pd.read_sql_query('select "meet_ID", name from "Meet";', con=engine)
+        self.create_widgets()
         self.current_layout = None
         self.engine = engine
-        self.meet = pd.read_sql_query('select "meet_ID", name from "Meet";', con=engine)
-        # self.division = pd.read_sql_query('select "division_ID", name from "Division";', con=self.engine)
+
+
+    def create_widgets(self):
+        # create the widgets for the import schedule layout
+       
+        self.main_label = tk.Label(self.main_frame, text='Skate Meet Manager', font=('Helvetica', 48))
+        self.main_label.grid(column=0, row=0, sticky='nsew') 
 
     def create_menu(self):
         menubar = tk.Menu(self.root)
@@ -38,7 +46,8 @@ class App:
         menubar.add_cascade(label="Action", menu=action_menu)
         action_menu.add_command(label="Import Schedules", command=self.import_schedule_layout)
         action_menu.add_command(label="Import Results", command=self.import_result_layout)
-        action_menu.add_command(label="Process Race Result", command=self.process_result)
+        action_menu.add_command(label="Process Event Results", command=self.process_event_result)
+        action_menu.add_command(label="Process Final Meet Results", command=self.process_meet_result)
         action_menu.add_command(label="Generate Event Heat Result", command=self.event_heat_result_layout)
         action_menu.add_command(label="Generate Next Schedule List", command=self.next_schedule_list_layout)
         action_menu.add_command(label="Generate Division Event Result", command=self.division_event_result_layout)
@@ -68,8 +77,11 @@ class App:
     def import_result_layout(self):
         self.show_layout(ImportResultLayout)
 
-    def process_result(self):
-        self.show_layout(ProcessResultLayout)
+    def process_event_result(self):
+        self.show_layout(ProcessDivisionResultLayout)
+
+    def process_meet_result(self):
+        self.show_layout(ProcessMeetResultLayout)
 
     def event_heat_result_layout(self):
         self.show_layout(GenerateEventHeatResultLayout)
