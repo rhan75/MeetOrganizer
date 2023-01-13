@@ -47,10 +47,7 @@ def generate_event_schedule_list_report(meet_ID: int, event: int, report_path: s
     reports = pd.DataFrame()
     report_name = f'Event {event} Men and Women Result for Age Group {low_div_name} and {high_div_name} '
     genders = {'Men':1, 'Women': 2}
-
-    for gender_name in genders.keys():
-        gender_ID = genders[gender_name]
-        qry = (
+    mixed_qry = (
         f'select skater.club_member_number as "ID", skater.last_name as "Last Name",skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time" '
         f'from "Race_Heat_Result_Detail" as rhrd '
         f'left join "Race_Heat_Result" as rhr '
@@ -61,7 +58,29 @@ def generate_event_schedule_list_report(meet_ID: int, event: int, report_path: s
         f'on skater."skater_ID" = rhrd."skater_ID" '
         f'left join "Club" as club '
         f'on club."club_ID" = skater."club_ID" '
-        f'where event = {event} and "meet_ID" = {meet_ID} and "division_ID" between {low_div} and {high_div} and skater."gender_ID" = {gender_ID} order by time desc;'
+        f'where event = {event} and "meet_ID" = {meet_ID} and "division_ID" between {low_div} and {high_div} '
+        f' order by time desc;'
+    )
+    report = pd.read_sql_query(mixed_qry, engine)
+    event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}'
+    title_row = pd.DataFrame({'ID': event_schedule_name, 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
+    empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
+    reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
+
+    for gender_name in genders.keys():
+        gender_ID = genders[gender_name]
+        qry = (
+            f'select skater.club_member_number as "ID", skater.last_name as "Last Name",skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time" '
+            f'from "Race_Heat_Result_Detail" as rhrd '
+            f'left join "Race_Heat_Result" as rhr '
+            f'on rhrd."rhr_ID" = rhr."rhr_ID" '
+            f'left join  "Race_Heat_Schedule" as rhs '
+            f'on rhs."rhs_ID" = rhr."rhs_ID" '
+            f'left join "Skater" as skater '
+            f'on skater."skater_ID" = rhrd."skater_ID" '
+            f'left join "Club" as club '
+            f'on club."club_ID" = skater."club_ID" '
+            f'where event = {event} and "meet_ID" = {meet_ID} and "division_ID" between {low_div} and {high_div} and skater."gender_ID" = {gender_ID} order by time desc;'
         )
         report = pd.read_sql_query(qry, engine)
         event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}-{gender_name}'
