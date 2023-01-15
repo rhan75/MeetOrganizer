@@ -10,11 +10,11 @@ class BaseLayout:
         self.filename = None
         self.result = None
         self.directory = None
-        self.meet_ID = None
+        self.competition_ID = None
         self.event = None
         self.gender = None
-        self.meet_name = None
-        self.meet = pd.read_sql_query('select "meet_ID", name from "Meet";', con=engine)
+        self.competition_name = None
+        self.meet = pd.read_sql_query('select "competition_ID", name from competition;', con=engine)
         self.engine = engine
 
 
@@ -38,10 +38,10 @@ class BaseLayout:
         self.filename = None
         self.result = None
         self.directory = None
-        self.meet_ID = None
+        self.competition_ID = None
         self.event = None
         self.gender = None
-        self.meet_name = None
+        self.competition_name = None
         # self.meet = None
         # self.engine = None
     
