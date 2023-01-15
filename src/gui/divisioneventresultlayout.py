@@ -56,17 +56,17 @@ class GenerateDivisionEventResultLayout(BaseLayout):
         self.button_close.grid(column=2, row=5, sticky='nsew')
 
     def generate_report(self):
-        reports.generate_division_report(self.meet_ID, self.event, self.folder_name, self.engine)
-        msg = f'Age Group Report for event {self.event} from {self.meet_name} has been generated in {self.folder_name}'
+        reports.generate_division_report(self.competition_id, self.event, self.folder_name, self.engine)
+        msg = f'Age Group Report for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
         self.insert_text('status_text', msg)
     
     def select_competition(self):  
-        self.meet_name =  self.comp_combobox.get()
-        #print(self.meet_name)
-        if self.meet_name is not None:
-            self.meet_ID = self.meet[self.meet['name']==self.meet_name]['meet_ID'][0]
+        self.competition_name =  self.comp_combobox.get()
+        #print(self.competition_name)
+        if self.competition_name is not None:
+            self.competition_id = self.meet[self.meet['name']==self.competition_name]['competition_id'][0]
         
-            event_race = pd.read_sql_query(f'select distinct race.name, race."race_ID", event from "Race_Heat_Schedule" as rhs left join "Race" as race on rhs."race_ID" = race."race_ID" where "meet_ID" = {self.meet_ID};', self.engine)
+            event_race = pd.read_sql_query(f'select distinct race.name, race.race_id, event from race_heat_schedule as rhs left join race as race on rhs.race_id = race.race_id where competition_id = {self.competition_id};', self.engine)
             event_text = tk.StringVar()
 
 
