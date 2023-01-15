@@ -142,7 +142,7 @@ class Competition_Skater(Base):
     id = Column(Integer, primary_key = True)
     compeition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=False)
-    age_group_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
+    ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
 
     def __repr__(self) -> str:
@@ -176,8 +176,8 @@ class Race_Heat_Schedule_Detail(Base):
     __tablename__ = 'race_heat_schedule_detail'
 
     id = Column(Integer, primary_key = True)
-    race_heat_schedule_id = Column(Integer, ForeignKey('race_heat_schedule.id'), nullable=False)
-    skater_team_id = Column(Integer, ForeignKey('skater_team.id'), nullable=True)
+    rhs_id = Column(Integer, ForeignKey('race_heat_schedule.id'), nullable=False)
+    st_id = Column(Integer, ForeignKey('skater_team.id'), nullable=True)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=True)
     lane_id = Column(Integer, ForeignKey('lane.id'), nullable=False)
 
@@ -188,8 +188,8 @@ class Race_Heat_Result(Base):
     __tablename__ = 'race_heat_result'
 
     id = Column(Integer, primary_key = True)
-    race_heat_schedule_id = Column(Integer, ForeignKey('race_heat_schedule.id'), nullable=False)
-    race_timestamp = Column(Time)
+    rhs_id = Column(Integer, ForeignKey('race_heat_schedule.id'), nullable=False)
+    timestamp = Column(Time)
 
     def __repr__(self) -> str:
         return f'Race_Heat_Result(id={self.id} started @ {self.race_timestamp}'    
@@ -199,12 +199,12 @@ class Race_Heat_Result_Detail(Base):
     __tablename__ = 'race_heat_result_detail'
 
     id = Column(Integer, primary_key = True)
-    race_heat_result_id = Column(Integer, ForeignKey('race_heat_result.id'), nullable=False)
-    skater_team_id = Column(Integer, ForeignKey('skater_team.id'), nullable=True)
+    rhr_id = Column(Integer, ForeignKey('race_heat_result.id'), nullable=False)
+    st_id = Column(Integer, ForeignKey('skater_team.id'), nullable=True)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=True)
     lane_id = Column(Integer, ForeignKey('lane.id'), nullable=False)
     status_id = Column(Integer, ForeignKey('status.id'), nullable=False)
-    age_group_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
+    ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
     time_type = Column(String)
     time = Column(Time)
@@ -219,7 +219,7 @@ class Race_Age_Group_Result(Base):
 
     id = Column(Integer, primary_key = True)
     competition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
-    age_group_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
+    ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     race_id = Column(Integer, ForeignKey('race.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
     name = Column(String)
@@ -231,9 +231,9 @@ class Race_Age_Group_Result_Detail(Base):
     __tablename__ = 'race_age_group_result_detail'
 
     id = Column(Integer, primary_key = True)
-    race_age_group_result_id = Column(Integer, ForeignKey('race_age_group_result.id'), nullable=False)
-    race_heat_result_detail_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
-    time = Column(Time)
+    ragr_id = Column(Integer, ForeignKey('race_age_group_result.id'), nullable=False)
+    rhrd_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
+    time_in_seconds = Column(Time)
     rank = Column(Integer)
     score = Column(Integer)
 
@@ -245,7 +245,7 @@ class Competition_Age_Group_Result(Base):
 
     id = Column(Integer, primary_key = True)
     competition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
-    age_group_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
+    ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
     name = Column(String)
 
@@ -257,7 +257,7 @@ class Competition_Age_Group_Result_Detail(Base):
 
     id = Column(Integer, primary_key = True)
     competition_age_group_result_id = Column(Integer, ForeignKey('competition_age_group_result.id'), nullable=False)
-    race_heat_result_detail_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
+    rhrd_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=True)
     rank = Column(Integer)
     total_score = Column(Integer)
