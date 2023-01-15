@@ -491,7 +491,7 @@ def update_skater(skater: dict, engine: Engine) -> None:
     if not engine.execute(exist_check).fetchall()[0][0]:
         qry = (
             f'insert into skater(club_id, gender_id, club_member_number, first_name, last_name, dob, ngb_member_number, ngb_name) '
-            f'values ({skater[club_id]}, {skater["gender_id"]}, {skater["club_member_number"]}, \'{skater["first_name"]}\', '
+            f'values ({skater["club_id"]}, {skater["gender_id"]}, {skater["club_member_number"]}, \'{skater["first_name"]}\', '
             f'\'{skater["last_name"]}\', {skater["dob"]}, {skater["ngb_member_number"]}, \'{skater["ngb_name"]}\';',
         )
         engine.execute(qry)
