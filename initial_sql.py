@@ -39,22 +39,22 @@ skater_Team = Table(
 club = Table(
     'club', meta,
     Column('id', Integer, primary_key = True),
-    #Column('state_id', Integer, ForeignKey('State.state_id'), nullable=True),
-    #Column('country_id', Integer, ForeignKey('Country.country_id'), nullable=True),
+    Column('state_id', Integer, ForeignKey('state.id'), nullable=True),
+    Column('country_id', Integer, ForeignKey('country.id'), nullable=True),
     Column('us_based', Boolean),
     Column('name', String),
     Column('abbreviation', String),
 )
 
-State = Table(
-    'State', meta,
+state = Table(
+    'state', meta,
     Column('id', Integer, primary_key = True),
     Column('name', String),
     Column('abbreviation', String),
 )
 
-Country = Table(
-    'Country', meta,
+country = Table(
+    'country', meta,
     Column('id', Integer, primary_key = True),
     Column('name', String),
     Column('abbreviation', String),
@@ -73,8 +73,8 @@ age_group = Table(
     Column('max_age', Integer),
 )
 
-age_group_Class = Table(
-    'age_group_Class', meta,
+age_group_class = Table(
+    'age_group_class', meta,
     Column('id', Integer, primary_key = True),
     Column('name', String),
 )
@@ -119,7 +119,7 @@ competition_skater = Table(
     Column('id', Integer, primary_key = True),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
     Column('skater_id', Integer, ForeignKey('skater.id'), nullable=False),
-    Column('age_group_id', Integer, ForeignKey('age_group.id'), nullable=False),
+    Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
 )
 
@@ -142,10 +142,10 @@ race_heat_schedule = Table(
 )
 
 race_heat_schedule_detail = Table(
-    'race_heat_schedule_Detail', meta,
+    'race_heat_schedule_detail', meta,
     Column('id', Integer, primary_key = True),
-    Column('race_heat_schedule_id', Integer, ForeignKey('race_heat_schedule.id'), nullable=False),
-    Column('skater_team_id', Integer, ForeignKey('skater_team.id'), nullable=True),
+    Column('rhs_id', Integer, ForeignKey('race_heat_schedule.id'), nullable=False),
+    Column('st_id', Integer, ForeignKey('skater_team.id'), nullable=True),
     Column('skater_id', Integer, ForeignKey('skater.id'), nullable=True),
     Column('lane_id', Integer, ForeignKey('lane.id'), nullable=False),
 )
@@ -153,19 +153,19 @@ race_heat_schedule_detail = Table(
 race_heat_result = Table(
     'race_heat_result', meta,
     Column('id', Integer, primary_key = True),
-    Column('race_heat_schedule_id', Integer, ForeignKey('race_heat_schedule.id'), nullable=False),
-    Column('race_timestamp', Time)
+    Column('rhs_id', Integer, ForeignKey('race_heat_schedule.id'), nullable=False),
+    Column('timestamp', Time)
 )
 
 race_heat_result_detail = Table(
-    'race_heat_result_Detail', meta,
+    'race_heat_result_detail', meta,
     Column('id', Integer, primary_key = True),
-    Column('race_heat_result_id', Integer, ForeignKey('race_heat_result.id'), nullable=False),
-    Column('skater_team_id', Integer, ForeignKey('skater_team.id'), nullable=True),
+    Column('rhr_id', Integer, ForeignKey('race_heat_result.id'), nullable=False),
+    Column('st_id', Integer, ForeignKey('skater_team.id'), nullable=True),
     Column('skater_id', Integer, ForeignKey('skater.id'), nullable=True),
     Column('lane_id', Integer, ForeignKey('lane.id'), nullable=False),
     Column('status_id', Integer, ForeignKey('status.id'), nullable=False),
-    Column('age_group_id', Integer, ForeignKey('age_group.id'), nullable=False),
+    Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('time_type', String),
     Column('time', Time),
@@ -177,18 +177,18 @@ race_age_group_result = Table(
     'race_age_group_result', meta,
     Column('id', Integer, primary_key = True),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
-    Column('age_group_id', Integer, ForeignKey('age_group.id'), nullable=False),
+    Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('race_id', Integer, ForeignKey('race.id'), nullable=False),
-    #Column('dc_id', Integer, ForeignKey('age_group_Class.dc_id'), nullable=False),
+    Column('agc_id', Integer, ForeignKey('age_group_class.id'), nullable=True),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('name', String),
 )
 
-race_age_group_result_Detail = Table(
-    'race_age_group_result_Detail', meta,
+race_age_group_result_detail = Table(
+    'race_age_group_result_detail', meta,
     Column('id', Integer, primary_key = True),
-    Column('race_age_group_result_id', Integer, ForeignKey('race_age_group_result.id'), nullable=False),
-    Column('race_heat_result_detail_id', Integer, ForeignKey('race_heat_result_Detail.id'), nullable=False),
+    Column('ragr_id', Integer, ForeignKey('race_age_group_result.id'), nullable=False),
+    Column('rhrd_id', Integer, ForeignKey('race_heat_result_detail.id'), nullable=False),
     Column('time_in_seconds', Float), #in seconds
     Column('rank', Integer),
     Column('score', Integer),
@@ -198,15 +198,15 @@ competition_age_group_result = Table(
     'competition_age_group_result', meta,
     Column('id', Integer, primary_key = True),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
-    Column('age_group_id', Integer, ForeignKey('age_group.id'), nullable=False),
+    Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('name', String),
 )
 
-competition_age_group_result_Detail = Table(
-    'competition_age_group_result_Detail', meta,
+competition_age_group_result_detail = Table(
+    'competition_age_group_result_detail', meta,
     Column('id', Integer, primary_key = True),
-    Column('competition_age_group_result_id', Integer, ForeignKey('competition_age_group_result.id'), nullable=False),
+    Column('cagr_id', Integer, ForeignKey('competition_age_group_result.id'), nullable=False),
     Column('skater_id', Integer, ForeignKey('skater.id'), nullable=False),
     Column('total_score', Integer),
     Column('rank', Integer),
