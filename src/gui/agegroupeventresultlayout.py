@@ -1,13 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
 
 from .baselayer import BaseLayout
 from skate import reports
 
-
-
-class GenerateEventHeatResultLayout(BaseLayout):
+class GenerateAgeGroupEventResultLayout(BaseLayout):
     def __init__(self, root, main_frame, engine):
         super().__init__(root, main_frame, engine)
         self.create_widgets()
@@ -19,13 +16,12 @@ class GenerateEventHeatResultLayout(BaseLayout):
 
         comp_text = tk.StringVar()
 
-        self.title_label = tk.Label(self.main_frame, text='Generate Heat Result for Event', font=('helvetica', 24))
+        self.title_label = tk.Label(self.main_frame, text='Generate Age Group Result for Event', font=('helvetica', 24))
         self.title_label.grid(column=0, row=0, sticky='nsew')
 
         self.status_text = tk.Text(self.main_frame, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
-        self.insert_text('status_text', 'Ready to generate event results for age groups')
-        
+        self.insert_text('status_text', 'Ready to generate age group result for event')
 
         self.comp_frame = ttk.Frame(self.main_frame)
         self.comp_frame.grid(column=0, row=2, sticky='nsew')
@@ -38,8 +34,8 @@ class GenerateEventHeatResultLayout(BaseLayout):
         # self.comp_combobox['values'] = self.competition['name'].to_list()
         self.comp_combobox.grid(column=1, row=2, sticky='nsew')
         comp_text.set('select competition')
-        self.comp_combobox['values'] = [row.name for row in self.competition]
         # self.comp_combobox['values'] = self.competition['name'].to_list()
+        self.comp_combobox['values'] = [row.name for row in self.competition]
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
@@ -53,28 +49,27 @@ class GenerateEventHeatResultLayout(BaseLayout):
         self.button_submit.grid(column=0, row=5, sticky='nsew')
 
         self.button_clear = ttk.Button(self.button_frame, text='clear', command=self.clear_selection('status_text'))
-        self.button_clear.grid(column=2, row=5, sticky='nsew')
+        self.button_clear.grid(column=1, row=5, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='close', command=self.root.destroy)
-        self.button_close.grid(column=4, row=5, sticky='nsew')
+        self.button_close.grid(column=2, row=5, sticky='nsew')
 
     def generate_report(self):
-        reports.generate_race_heat_report(self.competition_id, self.event, self.folder_name, self.engine)
-        # self.competition_name = self.competition[self.competition['id']==self.competition_id].iloc[0]['name']
-        msg = f'report for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
+        reports.generate_age_group_report(self.competition_id, self.event, self.folder_name, self.engine)
+        msg = f'Age Group Report for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
         self.insert_text('status_text', msg)
     
     def select_competition(self):  
         self.competition_name =  self.comp_combobox.get()
         #print(self.competition_name)
         if self.competition_name is not None:
-            self.competition_id = self.session.query(self.Competition).where(self.Competition.name==self.competition_name).first().id
             # self.competition_id = self.competition[self.competition['name']==self.competition_name].iloc[0]['id']
+            self.competition_id = self.session.query(self.Competition).where(self.Competition.name==self.competition_name).first().id
         
             # event_race = pd.read_sql_query(f'select distinct event from race_heat_schedule where competition_id = {self.competition_id};', self.engine)
+            # event_text = tk.StringVar()
             event_race = self.session.query(self.RHS.event).where(self.RHS.competition_id==self.competition_id).distinct().all()
             event_text = tk.StringVar()
-
 
             self.event_frame = ttk.Frame(self.main_frame)
             self.event_frame.grid(column=0, row=3, sticky='nsew')

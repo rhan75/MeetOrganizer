@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
 
 from .baselayer import BaseLayout
 from skate import reports
@@ -9,9 +8,9 @@ class GenerateNextScheduleListLayout(BaseLayout):
     def __init__(self, root, main_frame, engine):
         super().__init__(root, main_frame, engine)
         self.create_widgets()
-        self.low_division = None
-        self.high_division = None
-        self.division_range = None
+        self.low_age_group = None
+        self.high_age_group = None
+        self.age_group_range = None
 
     def create_widgets(self):
 
@@ -25,7 +24,7 @@ class GenerateNextScheduleListLayout(BaseLayout):
 
         self.status_text = tk.Text(self.main_frame, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
-        self.insert_text('status_text', 'Ready to generate event results for divisions')
+        self.insert_text('status_text', 'Ready to generate event results for age_groups')
         
 
         self.comp_frame = ttk.Frame(self.main_frame)
@@ -39,7 +38,8 @@ class GenerateNextScheduleListLayout(BaseLayout):
         
         self.comp_combobox.grid(column=1, row=2, sticky='nsew')
         comp_text.set('select competition')
-        self.comp_combobox['values'] = self.meet['name'].to_list()
+        self.comp_combobox['values'] = [row.name for row in self.competition]
+        # self.comp_combobox['values'] = self.competition['name'].to_list()
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
@@ -64,18 +64,20 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.create_widgets()
 
     def generate_report(self):
-        reports.generate_event_schedule_list_report(self.meet_ID, self.event, self.folder_name, self.division_range, self.engine)
-        self.meet_name = self.meet[self.meet['meet_ID']==self.meet_ID]['name'][0]
-        msg = f'Result for event {self.event} from {self.meet_name} has been generated in {self.folder_name}'
+        reports.generate_event_schedule_list_report(self.competition_id, self.event, self.folder_name, self.age_group_range, self.engine)
+        # self.competition_name = self.competition[self.competition['id']==self.competition_id]['name'][0]
+        msg = f'Result for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
         self.insert_text('status_text', msg)
     
     def select_competition(self):  
-        self.meet_name =  self.comp_combobox.get()
-        #print(self.meet_name)
-        if self.meet_name is not None:
-            self.meet_ID = self.meet[self.meet['name']==self.meet_name]['meet_ID'][0]
+        self.competition_name =  self.comp_combobox.get()
+        #print(self.competition_name)
+        if self.competition_name is not None:
+            # self.competition_id = self.competition[self.competition['name']==self.competition_name].iloc[0]['id']
+            self.competition_id = self.session.query(self.Competition).where(self.Competition.name==self.competition_name).first().id
         
-            event_race = pd.read_sql_query(f'select distinct race.name, race."race_ID", event from "Race_Heat_Schedule" as rhs left join "Race" as race on rhs."race_ID" = race."race_ID" where "meet_ID" = {self.meet_ID};', self.engine)
+            event_race = self.session.query(self.RHS.event).where(self.RHS.competition_id==self.competition_id).distinct().all()
+            # event_race = pd.read_sql_query(f'select distinct event from race_heat_schedule where competition_id = {self.competition_id};', self.engine)
             event_text = tk.StringVar()
 
 
@@ -87,7 +89,8 @@ class GenerateNextScheduleListLayout(BaseLayout):
             self.select_event_label.grid(column=0, row=3, sticky='nsew')
 
             self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
-            values = event_race['event'].to_list() #event value
+            # values = event_race['event'].to_list() #event value
+            values = [row.event for row in event_race]
             values.sort()
             self.event_combobox['values'] = values
             values = None
@@ -102,43 +105,45 @@ class GenerateNextScheduleListLayout(BaseLayout):
 
     def select_event(self):
         self.event = self.event_combobox.get()
+        age_group = self.session.query(self.AG.id, self.AG.name).all()
 
-        division = pd.read_sql_query('select "division_ID", name from "Division";', con=self.engine)
+        # age_group = pd.read_sql_query('select id, name from age_group;', con=self.engine)
         
-        self.division_frame = ttk.Frame(self.main_frame)
-        self.division_frame.grid(column=0, row=4, sticky='nsew')
+        self.age_group_frame = ttk.Frame(self.main_frame)
+        self.age_group_frame.grid(column=0, row=4, sticky='nsew')
 
 
-        self.division_label = tk.Label(self.division_frame,text='select the range of age groups')
-        self.division_label.grid(column=0, row=4, sticky='nsew')
+        self.age_group_label = tk.Label(self.age_group_frame,text='select the range of age groups')
+        self.age_group_label.grid(column=0, row=4, sticky='nsew')
 
-        division_low_text = tk.StringVar()
-        division_high_text = tk.StringVar()
+        age_group_low_text = tk.StringVar()
+        age_group_high_text = tk.StringVar()
+        
+        age_group_names = [row.name for row in age_group]
+        self.age_group_low_combobox = ttk.Combobox(self.age_group_frame, textvariable=age_group_low_text )
+        self.age_group_low_combobox.grid(column=1, row=4, sticky='nsew')
+        self.age_group_low_combobox['values'] = age_group_names
+        # age_group['name'].to_list()
+        age_group_low_text.set('Select the lower age_group')
 
-        self.division_low_combobox = ttk.Combobox(self.division_frame, textvariable=division_low_text )
-        self.division_low_combobox.grid(column=1, row=4, sticky='nsew')
-        self.division_low_combobox['values'] = division['name'].to_list()
-        division_low_text.set('Select the lower division')
-
-        self.division_high_combobox = ttk.Combobox(self.division_frame, textvariable=division_high_text )
-        self.division_high_combobox.grid(column=2, row=4, sticky='nsew')
-        self.division_high_combobox['values'] = division['name'].to_list()
-        division_high_text.set('Select the higher division')
+        self.age_group_high_combobox = ttk.Combobox(self.age_group_frame, textvariable=age_group_high_text )
+        self.age_group_high_combobox.grid(column=2, row=4, sticky='nsew')
+        self.age_group_high_combobox['values'] = age_group_names
+        age_group_high_text.set('Select the higher age_group')
                 
-        self.division_combobox_button = ttk.Button(self.division_frame,text='select', command=self.select_division)
-        self.division_combobox_button.grid(column=3, row=4, sticky='nsew')
+        self.age_group_combobox_button = ttk.Button(self.age_group_frame,text='select', command=self.select_age_group)
+        self.age_group_combobox_button.grid(column=3, row=4, sticky='nsew')
 
-    def select_division(self):
-        division = pd.read_sql_query('select "division_ID", name from "Division";', con=self.engine)
-        low = division[division['name']== self.division_low_combobox.get()].head(1)
-        high = division[division['name']== self.division_high_combobox.get()].head(1)
-        self.low_division = low['division_ID'].iloc[0]
-        self.high_division = high['division_ID'].iloc[0]
-        self.division_range = {'low_division': {'name':self.division_low_combobox.get(), 'division_ID':self.low_division}, 'high_division': {'name':self.division_high_combobox.get(), 'division_ID':self.high_division}}
-        # print(self.low_division, self.high_division)
-        # print(division[division['name']==low_div_name]['division_ID'][0])
-        # self.low_division = division[division['name']==low_div_name]['division_ID'].iloc[0]
-        # self.high_division = division[division['name']==high_div_name]['division_ID'].iloc[0]
+    def select_age_group(self):
+        # age_group = pd.read_sql_query('select id, name from age_group;', con=self.engine)
+        # age_group = self.session.query(self.AG.id, self.AG.name).all()
+        # low = age_group[age_group['name']== self.age_group_low_combobox.get()].head(1)
+        self.low_age_group = self.session.query(self.AG.id).where(self.AG.name == self.age_group_low_combobox.get()).first().id
+        # high = age_group[age_group['name']== self.age_group_high_combobox.get()].head(1)
+        self.high_age_group = self.session.query(self.AG.id).where(self.AG.name == self.age_group_high_combobox.get()).first().id
+        # self.low_age_group = low['id'].iloc[0]
+        # self.high_age_group = high['id'].iloc[0]
+        self.age_group_range = {'low_age_group': {'name':self.age_group_low_combobox.get(), 'ag_id':self.low_age_group}, 'high_age_group': {'name':self.age_group_high_combobox.get(), 'ag_id':self.high_age_group}}
         
         self.report_frame = ttk.Frame(self.main_frame)
         self.report_frame.grid(column=0, row=5, sticky='nsew')
