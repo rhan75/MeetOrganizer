@@ -5,6 +5,8 @@ import pandas as pd
 from .baselayer import BaseLayout
 from skate import reports
 
+
+
 class GenerateEventHeatResultLayout(BaseLayout):
     def __init__(self, root, main_frame, engine):
         super().__init__(root, main_frame, engine)
@@ -22,7 +24,7 @@ class GenerateEventHeatResultLayout(BaseLayout):
 
         self.status_text = tk.Text(self.main_frame, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
-        self.insert_text('status_text', 'Ready to generate event results for divisions')
+        self.insert_text('status_text', 'Ready to generate event results for age groups')
         
 
         self.comp_frame = ttk.Frame(self.main_frame)
@@ -33,10 +35,11 @@ class GenerateEventHeatResultLayout(BaseLayout):
         self.select_comp_label.grid(column=0, row=2, sticky='nsew')
 
         self.comp_combobox = ttk.Combobox(self.comp_frame, textvariable=comp_text)
-        # self.comp_combobox['values'] = self.meet['name'].to_list()
+        # self.comp_combobox['values'] = self.competition['name'].to_list()
         self.comp_combobox.grid(column=1, row=2, sticky='nsew')
         comp_text.set('select competition')
-        self.comp_combobox['values'] = self.meet['name'].to_list()
+        self.comp_combobox['values'] = [row.name for row in self.competition]
+        # self.comp_combobox['values'] = self.competition['name'].to_list()
 
         self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
@@ -56,18 +59,20 @@ class GenerateEventHeatResultLayout(BaseLayout):
         self.button_close.grid(column=4, row=5, sticky='nsew')
 
     def generate_report(self):
-        reports.generate_race_heat_report(self.meet_ID, self.event, self.folder_name, self.engine)
-        self.meet_name = self.meet[self.meet['meet_ID']==self.meet_ID]['name'][0]
-        msg = f'report for event {self.event} from {self.meet_name} has been generated in {self.folder_name}'
+        reports.generate_race_heat_report(self.competition_id, self.event, self.folder_name, self.engine)
+        # self.competition_name = self.competition[self.competition['id']==self.competition_id].iloc[0]['name']
+        msg = f'report for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
         self.insert_text('status_text', msg)
     
     def select_competition(self):  
-        self.meet_name =  self.comp_combobox.get()
-        #print(self.meet_name)
-        if self.meet_name is not None:
-            self.meet_ID = self.meet[self.meet['name']==self.meet_name]['meet_ID'][0]
+        self.competition_name =  self.comp_combobox.get()
+        #print(self.competition_name)
+        if self.competition_name is not None:
+            self.competition_id = self.session.query(self.Competition).where(self.Competition.name==self.competition_name).first().id
+            # self.competition_id = self.competition[self.competition['name']==self.competition_name].iloc[0]['id']
         
-            event_race = pd.read_sql_query(f'select distinct race.name, race."race_ID", event from "Race_Heat_Schedule" as rhs left join "Race" as race on rhs."race_ID" = race."race_ID" where "meet_ID" = {self.meet_ID};', self.engine)
+            # event_race = pd.read_sql_query(f'select distinct event from race_heat_schedule where competition_id = {self.competition_id};', self.engine)
+            event_race = self.session.query(self.RHS.event).where(self.RHS.competition_id==self.competition_id).distinct().all()
             event_text = tk.StringVar()
 
 
@@ -79,7 +84,8 @@ class GenerateEventHeatResultLayout(BaseLayout):
             self.select_event_label.grid(column=0, row=3, sticky='nsew')
 
             self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
-            values = event_race['event'].to_list() #event value
+            # values = event_race['event'].to_list() #event value
+            values = [row.event for row in event_race]
             values.sort()
             self.event_combobox['values'] = values
             values = None

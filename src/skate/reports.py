@@ -1,7 +1,31 @@
 from sqlalchemy.engine.base import Engine
 import pandas as pd
+from sqlalchemy import exists, and_
+from sqlalchemy.orm import sessionmaker, aliased
+from skate.model import *
+from sqlalchemy import select, exists, and_
 # from weasyprint import HTML
 
+AG = aliased(Age_Group)
+AGC = aliased(Age_Group_Class)
+
+CS = aliased(Competition_Skater)
+CAGR = aliased(Competition_Age_Group_Result)
+CAGRD = aliased(Competition_Age_Group_Result_Detail)
+
+RHS = aliased(Race_Heat_Schedule)
+RHR = aliased(Race_Heat_Result)
+RHRD = aliased(Race_Heat_Result_Detail)
+RAGR = aliased(Race_Age_Group_Result)
+RHSD = aliased(Race_Heat_Schedule_Detail)
+RAGRD = aliased(Race_Age_Group_Result_Detail)
+RS = aliased(Race_Style)
+
+
+def prep_session(engine: Engine) -> sessionmaker:
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return session
 '''
 Report Functions
 '''
@@ -38,166 +62,137 @@ def generate_report(report_name: str, report_path: str, report: pd.DataFrame) ->
         file.write(html)
     # HTML(html_file).write_pdf(pdf_file)
 
+def convert_time_to_string(time_value):
+    if time_value is None:
+        return None
+    return time_value.strftime('%M:%S.%f')[:-3]
+
 #Generate list of record for the event
-def generate_event_schedule_list_report(meet_ID: int, event: int, report_path: str, division_range: dict, engine: Engine) -> None:
-    low_div_name = division_range['low_division']['name']
-    low_div = division_range['low_division']['division_ID']
-    high_div_name = division_range['high_division']['name']
-    high_div = division_range['high_division']['division_ID']
+def generate_event_schedule_list_report(competition_id: int, event: int, report_path: str, age_group_range: dict, engine: Engine) -> None:
+    session = prep_session(engine)
+    low_div_name = age_group_range['low_age_group']['name']
+    low_div = age_group_range['low_age_group']['ag_id']
+    high_div_name = age_group_range['high_age_group']['name']
+    high_div = age_group_range['high_age_group']['ag_id']
     reports = pd.DataFrame()
     report_name = f'Event {event} Men and Women Result for Age Group {low_div_name} and {high_div_name} '
     genders = {'Men':1, 'Women': 2}
-    mixed_qry = (
-        f'select skater.club_member_number as "ID", skater.last_name as "Last Name",skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time" '
-        f'from "Race_Heat_Result_Detail" as rhrd '
-        f'left join "Race_Heat_Result" as rhr '
-        f'on rhrd."rhr_ID" = rhr."rhr_ID" '
-        f'left join  "Race_Heat_Schedule" as rhs '
-        f'on rhs."rhs_ID" = rhr."rhs_ID" '
-        f'left join "Skater" as skater '
-        f'on skater."skater_ID" = rhrd."skater_ID" '
-        f'left join "Club" as club '
-        f'on club."club_ID" = skater."club_ID" '
-        f'where event = {event} and "meet_ID" = {meet_ID} and "division_ID" between {low_div} and {high_div} '
-        f' order by time desc;'
-    )
-    report = pd.read_sql_query(mixed_qry, engine)
+    report_cols = ['ID', 'Last Name', 'First Name', 'Aff', 'Time']
+    report = session.query(Skater.id, Skater.last_name, Skater.first_name, Club.abbreviation, RHRD.time)\
+        .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
+        .outerjoin(RHS, RHS.id == RHR.rhs_id)\
+        .outerjoin(Skater, Skater.id == RHRD.skater_id)\
+        .outerjoin(Club, Club.id == Skater.club_id)\
+        .filter(and_(RHS.event == event, RHS.competition_id == competition_id, RHRD.ag_id.between(low_div, high_div)))\
+        .order_by(RHRD.time.desc())\
+        .all()
+    report = pd.DataFrame(report, columns=report_cols)
+    report['Time'] = report['Time'].apply(convert_time_to_string)
     event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}'
     title_row = pd.DataFrame({'ID': event_schedule_name, 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
-    empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
+    empty_row = pd.DataFrame({col: '' for col in report_cols}, index=[0])
     reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
 
     for gender_name in genders.keys():
-        gender_ID = genders[gender_name]
-        qry = (
-            f'select skater.club_member_number as "ID", skater.last_name as "Last Name",skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time" '
-            f'from "Race_Heat_Result_Detail" as rhrd '
-            f'left join "Race_Heat_Result" as rhr '
-            f'on rhrd."rhr_ID" = rhr."rhr_ID" '
-            f'left join  "Race_Heat_Schedule" as rhs '
-            f'on rhs."rhs_ID" = rhr."rhs_ID" '
-            f'left join "Skater" as skater '
-            f'on skater."skater_ID" = rhrd."skater_ID" '
-            f'left join "Club" as club '
-            f'on club."club_ID" = skater."club_ID" '
-            f'where event = {event} and "meet_ID" = {meet_ID} and "division_ID" between {low_div} and {high_div} and skater."gender_ID" = {gender_ID} order by time desc;'
-        )
-        report = pd.read_sql_query(qry, engine)
+        gender_id = genders[gender_name]
+        report = session.query(Skater.id, Skater.last_name, Skater.first_name, Club.abbreviation, RHRD.time)\
+            .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
+            .outerjoin(RHS, RHS.id == RHR.rhs_id)\
+            .outerjoin(Skater, Skater.id == RHRD.skater_id)\
+            .outerjoin(Club, Club.id == Skater.club_id)\
+            .filter(and_(RHS.event == event, RHS.competition_id == competition_id, Skater.gender_id == gender_id, RHRD.ag_id.between(low_div, high_div)))\
+            .order_by(RHRD.time.desc())\
+            .all()
+        report = pd.DataFrame(report, columns=report_cols)
+        report['Time'] = report['Time'].apply(convert_time_to_string)
+        # report = pd.read_sql_query(qry, engine)
         event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}-{gender_name}'
         title_row = pd.DataFrame({'ID': event_schedule_name, 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
     generate_report(report_name, report_path, reports)
 
-def generate_division_report_name(meet_ID: int, division_ID: int, race_ID: int, gender_ID: int, engine: Engine) -> str:
-    #find rdr_ID using meet_ID, division_ID, race_ID, gender_ID
-    meet = pd.read_sql_query('select * from "Meet";', con=engine)
-    race = pd.read_sql_query('select * from "Race";', con=engine)
-    division = pd.read_sql_query('select * from "Division";', con=engine)
-    gender = pd.read_sql_query('select * from "Gender";', con=engine)
-    division_name = division[division['division_ID']== division_ID].iloc[0]['name']
-    gender_name = gender[gender['gender_ID']==gender_ID].iloc[0]['name']
-    race_name = race[race['race_ID']==race_ID].iloc[0]['name']
-    meet_name = meet[meet['meet_ID']==meet_ID].iloc[0]['name']
-    return f"{meet_name} {gender_name.upper()} {division_name.upper()} {race_name}"
+def generate_age_group_report_name(competition_id: int, ag_id: int, race_id: int, gender_id: int, engine: Engine) -> str:
+    session = prep_session(engine)
+    age_group_name = session.query(AG).where(AG.id == ag_id).first().name
+    gender_name = session.query(Gender).where(Gender.id == gender_id).first().name
+    race_name = session.query(Race).where(Race.id == race_id).first().name
+    competition_name = session.query(Competition).where(Competition.id == competition_id).first().name
+    return f"{competition_name} {gender_name.upper()} {age_group_name.upper()} {race_name}"
 
-def generate_division_report(meet_ID: int, event: int, report_path: str, engine: Engine) -> None:
-    #find rdr_ID using meet_ID, division_ID, race_ID, gender_ID
+def generate_age_group_report(competition_id: int, event: int, report_path: str, engine: Engine) -> None:
+    session = prep_session(engine)
+    #find ragr_id using competition_id, ag_id, race_id, gender_id
     report_name = f'Age Group Results for Event {event}'
     reports = pd.DataFrame()
-    qry = (
-        f'select distinct rdrd."rdr_ID" '
-        f'from "Race_Heat_Result" as rhr '
-        f'left join "Race_Heat_Schedule" as rhs '
-        f'on rhs."rhs_ID" = rhr."rhs_ID" '
-        f'left join "Race_Heat_Result_Detail" as rhrd '
-        f'on rhrd."rhr_ID" = rhr."rhr_ID" '
-        f'left join "Race_Division_Result_Detail" as rdrd '
-        f'on rdrd."rhrd_ID" = rhrd."rhrd_ID" '
-        f'where rhs."meet_ID" = {meet_ID} and rhs.event = {event};'
-    )
-    rdr_ID_df = pd.read_sql_query(qry, engine)
-    for idx, rdr in rdr_ID_df.iterrows():
-        rdr_ID = rdr[0]
-        report_qry = (
-            f'select rdrd.rank as "Place", skater.club_member_number as "ID", skater.last_name as "Last Name", '
-            f'skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time",  rdrd.score as "Score" '
-            f'from "Race_Division_Result_Detail" as rdrd '
-            f'left join "Race_Heat_Result_Detail" as rhrd '
-            f'on rdrd."rhrd_ID" = rhrd."rhrd_ID" '
-            f'left join "Skater" as skater '
-            f'on rhrd."skater_ID" = skater."skater_ID" '
-            f'left join "Club" as club '
-            f'on skater."club_ID" = club."club_ID" '
-            f'left join "Race_Heat_Result" as rhr '
-            f'on rhr."rhr_ID" = rhrd."rhr_ID" ' 
-            f'left join "Race_Heat_Schedule" as rhs ' 
-            f'on rhs."rhs_ID" = rhr."rhs_ID" '
-            f'where rdrd."rdr_ID" = {rdr_ID} and rhs.event = {event} '
-            f'order by rdrd.rank;'     
-        )   
-        report = pd.read_sql_query(report_qry, con=engine)   
-           
-        rdr = pd.read_sql_query(f'select * from "Race_Division_Result" where "rdr_ID" = {rdr_ID}', engine)
-        race_ID = rdr.iloc[0]['race_ID']
-        gender_ID =rdr.iloc[0]['gender_ID'] 
-        division_ID = rdr.iloc[0]['division_ID']
-        division_result_name = f'{generate_division_report_name(meet_ID, division_ID, race_ID, gender_ID, engine)}-event_{event}'
-        title_row = pd.DataFrame({'Place': division_result_name, 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':'', 'Score': ''}, index=[0])
+    ragr_id_df = session.query(RAGRD.ragr_id)\
+        .outerjoin(RHRD, RAGRD.rhrd_id == RHRD.id)\
+        .outerjoin(RHR, RHRD.rhr_id == RHR.id)\
+        .outerjoin(RHS, RHS.id == RHR.rhs_id)\
+        .filter(and_(RHS.competition_id == competition_id, RHS.event == event)).distinct().all()
+    for row in ragr_id_df:
+        ragr_id = row.ragr_id
+        report_cols = ['Place', 'ID',"Last Name","First Name", "Aff", "Time","Score" ]
+
+        report = session.query(RAGRD.rank, Skater.club_member_number, Skater.last_name, Skater.first_name, Club.abbreviation, RHRD.time, RAGRD.score)\
+            .outerjoin(RHRD, RHRD.id == RAGRD.rhrd_id)\
+            .outerjoin(Skater, Skater.id == RHRD.skater_id)\
+            .outerjoin(Club, Club.id == Skater.club_id)\
+            .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
+            .outerjoin(RHS, RHS.id == RHR.rhs_id)\
+            .fiter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).all()
+        report = pd.DataFrame(report, columns=report_cols)
+        report['Time'] = report['Time'].apply(convert_time_to_string)
+        rdr = session.query(RAGR.race_id, RAGR.gender_id, RAGR.ag_id).where(RAGR.id == ragr_id).first()
+        race_id = rdr.race_id
+        gender_id =rdr.gender_id
+        ag_id = rdr.ag_id
+        age_group_result_name = f'{generate_age_group_report_name(competition_id, ag_id, race_id, gender_id, engine)}-event_{event}'
+        title_row = pd.DataFrame({'Place': age_group_result_name, 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':'', 'Score': ''}, index=[0])
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
 
     generate_report(report_name, report_path, reports)  
 
 
-def generate_race_heat_report(meet_ID: int, event: int, report_path: str, engine: Engine) -> None:
+def generate_race_heat_report(competition_id: int, event: int, report_path: str, engine: Engine) -> None:
+    session = prep_session(engine)
     report_name = f'Event No. {event} Results'
     reports = pd.DataFrame()
-    rhs_IDs = pd.read_sql_query(f'select "rhs_ID", name from "Race_Heat_Schedule" where "meet_ID" = {meet_ID} and event = {event};', engine)
-    for idx, row in rhs_IDs.iterrows(): 
-        rhs_ID = (row[0])
+    # rhs_ids = pd.read_sql_query(f'select id, name from race_heat_schedule where competition_id = {competition_id} and event = {event};', engine)
+    rhs_ids =session.query(RHS.id, RHS.name).where(and_(RHS.competition_id==competition_id, RHS.event==event)).all()
+    # for idx, row in rhs_ids.iterrows(): 
+    for row in rhs_ids:
+        rhs_id = row.id
+        name = row.name
+        report_lst = session.query(RHRD.rank, Skater.club_member_number, Lane.name, Skater.last_name, Skater.first_name, Club.abbreviation, RHRD.time)\
+            .outerjoin(RHR, RHRD.rhr_id==RHR.id).outerjoin(RHS, RHS.id==RHR.rhs_id).outerjoin(Skater, Skater.id==RHRD.skater_id)\
+            .outerjoin(Lane, Lane.id==RHRD.lane_id).outerjoin(Club, Club.id == Skater.club_id)\
+            .where(RHS.id == rhs_id).order_by(RHRD.rank).all()
 
-        qry = (
-            f'select rhrd.rank as "Place", skater.club_member_number as "ID", lane.name as "Lane", skater.last_name as "Last Name", ' 
-            f'skater.first_name as "First Name", club.abbreviation as "Aff", rhrd.time as "Time" '
-            f'from "Race_Heat_Result_Detail" as rhrd '
-            f'left join "Race_Heat_Result" as rhr '
-            f'on rhrd."rhr_ID" = rhr."rhr_ID" '
-            f'left join  "Race_Heat_Schedule" as rhs '
-            f'on rhs."rhs_ID" = rhr."rhs_ID" '
-            f'left join "Skater" as skater '
-            f'on skater."skater_ID" = rhrd."skater_ID" '
-            f'left join "Lane" as lane '
-            f'on rhrd."lane_ID" = lane."lane_ID" '
-            f'left join "Club" as club '
-            f'on club."club_ID" = skater."club_ID" '
-            f'where rhs."rhs_ID" = {rhs_ID} order by rank;'
-        )
-        title_row = pd.DataFrame({'Place': [row[1]], 'ID': '', 'Lane':'', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
-        report = pd.read_sql_query(qry, engine)
+        title_row = pd.DataFrame({'Place': name, 'ID': '', 'Lane':'', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
+        report_col = ['Place', 'ID', 'Lane', 'Last Name', 'First Name', 'Aff', 'Time']
+        report = pd.DataFrame(report_lst, columns=report_col)
+        report['Time'] = report['Time'].apply(convert_time_to_string)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
     generate_report(report_name, report_path, reports)
 
-def generate_meet_division_report(meet_ID: int, report_path: str, engine: Engine) -> None:
+def generate_competition_age_group_report(competition_id: int, report_path: str, engine: Engine) -> None:
+    session = prep_session(engine)
     reports = pd.DataFrame()
-    mdr = pd.read_sql_query(f'select distinct "mdr_ID", name from "Meet_Division_Result" where "meet_ID" = {meet_ID}', engine)
-    for idx, each_mdr in mdr.iterrows():
-        mdr_ID = each_mdr[0]
-        
-        qry = (
-            f'select mdrd.rank as "Place", skater.club_member_number as "ID", skater.last_name as "Last Name", skater.first_name as "First Name", '
-            f'club.abbreviation as "Aff", mdrd.total_score as "Total Score" '
-            f'from "Meet_Division_Result_Detail" as mdrd '
-            f'left join "Skater" as skater '
-            f'on mdrd."skater_ID" = skater."skater_ID" '
-            f'left join "Club" as club '
-            f'on skater."club_ID" = club."club_ID" '
-            f'where mdrd."mdr_ID" = {mdr_ID} order by mdrd.rank;'
-        )
-        title_row = pd.DataFrame({'Place': [each_mdr[1]], 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Total Score':''}, index=[0])
-        report = pd.read_sql_query(qry, con=engine)   
-        report_name = f'Combined Final Reports'
+    Competition_name = session.query(Competition).where(Competition.id == competition_id).first().name
+    report_name = f'Combined Final Report for {Competition_name}'
+    cagr = session.query(CAGR.id, CAGR.name).where(CAGR.competition_id == competition_id).distinct().all()
+    for row in cagr:
+        cagr_id = row.id
+        title_row = pd.DataFrame({'Place': row.name, 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Total Score':''}, index=[0])
+        report_cols = ["Place", "ID", "Last Name", "First Name", "Aff", "Total Score"]
+        report = session.query(CAGRD.rank, Skater.club_member_number, Skater.last_name, Skater.first_name, Club.abbreviation, CAGRD.total_score)\
+            .outerjoin(Skater, CAGRD.skater_id == Skater.id)\
+            .outerjoin(Club, Skater.club_id == Club.id)\
+            .filter(CAGRD.cagr_id == cagr_id).order_by(CAGRD.rank).all()
+        report = pd.DataFrame(report, columns=report_cols)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
     generate_report(report_name, report_path, reports)     
