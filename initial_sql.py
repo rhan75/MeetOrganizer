@@ -19,8 +19,8 @@ skater = Table(
     Column('club_id', Integer, ForeignKey('club.id'), nullable=True),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('club_member_number', Integer),
-    Column('first_name', String),
-    Column('last_name', String),
+    Column('first_name', String(20)),
+    Column('last_name', String(20)),
     Column('dob', Date),
     Column('ngb_member_number', Integer),
     Column('ngb_name', String),
@@ -39,8 +39,6 @@ skater_Team = Table(
 club = Table(
     'club', meta,
     Column('id', Integer, primary_key = True),
-    Column('state_id', Integer, ForeignKey('state.id'), nullable=True),
-    Column('country_id', Integer, ForeignKey('country.id'), nullable=True),
     Column('us_based', Boolean),
     Column('name', String),
     Column('abbreviation', String),
@@ -68,7 +66,7 @@ status = Table(
 age_group = Table(
     'age_group', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(50)),
     Column('min_age', Integer),
     Column('max_age', Integer),
 )
@@ -76,7 +74,7 @@ age_group = Table(
 age_group_class = Table(
     'age_group_class', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(1)),
 )
 gender = Table(
     'gender', meta,
@@ -87,13 +85,13 @@ gender = Table(
 lane = Table(
     'lane', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(5)),
 )
 
 race_style = Table(
     'race_style', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(15)),
 )
 
 
@@ -101,7 +99,7 @@ race = Table(
     'race', meta,
     Column('id', Integer, primary_key = True),
     Column('rs_id', Integer, ForeignKey('race_style.id'), nullable=False),
-    Column('name', String),
+    Column('name', String(15)),
     Column('distance', Integer),
     Column('team', Boolean),
 )
@@ -109,7 +107,7 @@ race = Table(
 competition = Table(
     'competition', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(50)),
     Column('start_date', Date),
     Column('end_date', Date),
 )
@@ -126,7 +124,7 @@ competition_skater = Table(
 heat = Table(
     'heat', meta,
     Column('id', Integer, primary_key = True),
-    Column('name', String),
+    Column('name', String(15)),
 )
 
 race_heat_schedule = Table(
@@ -136,7 +134,7 @@ race_heat_schedule = Table(
     Column('heat_id', Integer, ForeignKey('heat.id'), nullable=False),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
     Column('event', Integer),
-    Column('name', String),
+    Column('name', String(50)),
     Column('total_skaters', Integer),
     Column('team_race', Boolean),
 )
@@ -168,9 +166,9 @@ race_heat_result_detail = Table(
     Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('time_type', String),
-    Column('time', Time),
-    Column('time_in_seconds', Float),
-    Column('rank', Integer),
+    Column('time', Time, nullable=True),
+    Column('time_in_seconds', Float, nullable=True),
+    Column('rank', Integer, nullable=True),
 )
 
 race_age_group_result = Table(
@@ -181,6 +179,7 @@ race_age_group_result = Table(
     Column('race_id', Integer, ForeignKey('race.id'), nullable=False),
     Column('agc_id', Integer, ForeignKey('age_group_class.id'), nullable=True),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
+    Column('event', Integer),
     Column('name', String),
 )
 
@@ -189,9 +188,9 @@ race_age_group_result_detail = Table(
     Column('id', Integer, primary_key = True),
     Column('ragr_id', Integer, ForeignKey('race_age_group_result.id'), nullable=False),
     Column('rhrd_id', Integer, ForeignKey('race_heat_result_detail.id'), nullable=False),
-    Column('time_in_seconds', Float), #in seconds
-    Column('rank', Integer),
-    Column('score', Integer),
+    Column('time_in_seconds', Float, nullable=True), #in seconds
+    Column('rank', Integer, nullable=True),
+    Column('score', float, nullable=True),
 )
 
 competition_age_group_result = Table(
@@ -208,8 +207,8 @@ competition_age_group_result_detail = Table(
     Column('id', Integer, primary_key = True),
     Column('cagr_id', Integer, ForeignKey('competition_age_group_result.id'), nullable=False),
     Column('skater_id', Integer, ForeignKey('skater.id'), nullable=False),
-    Column('total_score', Integer),
-    Column('rank', Integer),
+    Column('total_score', Float, nullable=True),
+    Column('rank', Integer, nullable=True),
 )
 #engine = create_engine('sqlite:///competition_program.db', echo=True)
 
