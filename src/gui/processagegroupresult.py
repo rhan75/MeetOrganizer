@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
-from sqlalchemy.orm import sessionmaker, declarative_base, aliased
+from sqlalchemy.orm import aliased
 from sqlalchemy import and_
 
 from .baselayer import BaseLayout

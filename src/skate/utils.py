@@ -3,7 +3,6 @@ from sqlalchemy import exists, and_
 from sqlalchemy.orm import sessionmaker, aliased
 import pandas as pd
 from datetime import timedelta, date, datetime
-from dateutil.parser import parse
 from .model import *
 
 # Aliases for DB Tables ORM

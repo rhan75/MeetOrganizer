@@ -1,9 +1,8 @@
 from sqlalchemy.engine.base import Engine
 import pandas as pd
-from sqlalchemy import exists, and_
+from sqlalchemy import and_
 from sqlalchemy.orm import sessionmaker, aliased
 from skate.model import *
-from sqlalchemy import select, exists, and_
 # from weasyprint import HTML
 
 AG = aliased(Age_Group)

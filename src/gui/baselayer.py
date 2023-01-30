@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.engine.base import Engine
-import pandas as pd
 from skate.model import *
 #from connection import create_connection
 

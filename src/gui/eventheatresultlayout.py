@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
 
 from .baselayer import BaseLayout
 from skate import reports

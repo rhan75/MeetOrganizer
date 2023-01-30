@@ -1,6 +1,5 @@
 #import sqlite3
 from sqlalchemy import create_engine, Float, Table, Column, Integer, String, MetaData, Date, Time, Boolean, ForeignKey
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 import toml
 import pandas as pd

@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
 from sqlalchemy.orm import aliased
 from .baselayer import BaseLayout
 from skate import utils
