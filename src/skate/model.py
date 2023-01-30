@@ -140,7 +140,7 @@ class Competition_Skater(Base):
     __tablename__ = 'competition_skater'
 
     id = Column(Integer, primary_key = True)
-    compeition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
+    competition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=False)
     ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
@@ -166,11 +166,11 @@ class Race_Heat_Schedule(Base):
     competition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
     event = Column(Integer)
     name = Column(String(50))
-    total_sakters = Column(Integer)
+    total_skaters = Column(Integer)
     team_race = Column(Boolean)
 
     def __repr__(self) -> str:
-        return f'Race_Heat_Schedule(id={self.id}, Name={self.name}, Event={self.event}, Total Skaters={self.total_sakters}'
+        return f'Race_Heat_Schedule(id={self.id}, Name={self.name}, Event={self.event}, Total Skaters={self.total_skaters}'
 
 class Race_Heat_Schedule_Detail(Base):
     __tablename__ = 'race_heat_schedule_detail'
@@ -207,9 +207,9 @@ class Race_Heat_Result_Detail(Base):
     ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
     time_type = Column(String)
-    time = Column(Time)
-    time_in_seconds = Column(Float)
-    rank = Column(Integer)
+    time = Column(Time, nullable=True)
+    time_in_seconds = Column(Float, nullable=True)
+    rank = Column(Integer, nullable=True)
 
     def __repr__(self) -> str:
         return f'Race_Heat_Result_Detail(id={self.id}), Skater ID={self.skater_id}, Time={self.time}'
@@ -222,6 +222,7 @@ class Race_Age_Group_Result(Base):
     ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     race_id = Column(Integer, ForeignKey('race.id'), nullable=False)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
+    event = Column(Integer)
     name = Column(String)
 
     def __repr__(self) -> str:
@@ -233,9 +234,9 @@ class Race_Age_Group_Result_Detail(Base):
     id = Column(Integer, primary_key = True)
     ragr_id = Column(Integer, ForeignKey('race_age_group_result.id'), nullable=False)
     rhrd_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
-    time_in_seconds = Column(Time)
-    rank = Column(Integer)
-    score = Column(Integer)
+    time_in_seconds = Column(Time, nullable=True)
+    rank = Column(Integer, nullable=True)
+    score = Column(Float, nullable=True)
 
     def __repr__(self) -> str:
         return f'race_age_group_result_detail(id={self.id})'
@@ -253,11 +254,13 @@ class Competition_Age_Group_Result(Base):
         return f'Race_age_group_Result(id={self.id}), name={self.name}'
 
 class Competition_Age_Group_Result_Detail(Base):
-    __tablename__ = 'competition_heat_result_detail'
+    __tablename__ = 'competition_age_group_result_detail'
 
     id = Column(Integer, primary_key = True)
-    competition_age_group_result_id = Column(Integer, ForeignKey('competition_age_group_result.id'), nullable=False)
-    rhrd_id = Column(Integer, ForeignKey('race_heat_result_detail.id'), nullable=False)
+    cagr_id = Column(Integer, ForeignKey('competition_age_group_result.id'), nullable=False)
     skater_id = Column(Integer, ForeignKey('skater.id'), nullable=True)
-    rank = Column(Integer)
-    total_score = Column(Integer)
+    total_score = Column(Float, nullable=True)
+    rank = Column(Integer, nullable=True)
+
+    def __repr__(self) -> str:
+        return f'CAGRD(id={self.id}), cagr_id={self.cagr_id}, skater_id={self.skater_id}, total_score={self.total_score}, rank={self.rank}'
