@@ -145,7 +145,7 @@ class Competition_Skater(Base):
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
 
     def __repr__(self) -> str:
-        return f'Competition Skater(id={self.id}, Competition={self.compeition_id}, Skater={self.skater_id}'
+        return f'Competition Skater(id={self.id}, Competition={self.competition_id}, Skater={self.skater_id}'
 
 class Heat(Base):
     __tablename__ = 'heat'
