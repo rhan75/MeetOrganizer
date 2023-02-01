@@ -1,6 +1,7 @@
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import exists, and_
 from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm import decl_api, session
 import pandas as pd
 from datetime import timedelta, date, datetime
 from .model import *
@@ -21,6 +22,38 @@ RHSD = aliased(Race_Heat_Schedule_Detail)
 RAGRD = aliased(Race_Age_Group_Result_Detail)
 RS = aliased(Race_Style)
 
+def update_object(session: session.Session, model_name: decl_api.DeclarativeMeta, model_dict: dict, main_key:str):
+    instance = get_object_info(session, model_name, {main_key: model_dict[main_key]})
+    result = {}
+    if instance:
+        if not compare_dict_instance(model_dict, instance):
+            result[main_key] = False
+        else:
+            result[main_key] = True
+    else:
+        new_instance = model_name(**model_dict)
+        session.add(new_instance)
+        session.commit()
+        
+    return result
+
+
+def compare_dict_instance(dict_obj, class_instance):
+    for key, value in dict_obj.items():
+        if hasattr(class_instance, key):
+            if getattr(class_instance, key) != value:
+                return False
+        else:
+            return False
+    return True
+
+def get_object_info(session, model_name, **kwargs):
+    query = session.query(model_name)
+    for attr, value in kwargs.items():
+        query = query.filter(getattr(model_name, attr) == value)
+    print(query)
+    return query.all()
+
 def prep_session(engine: Engine) -> sessionmaker:
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -28,7 +61,7 @@ def prep_session(engine: Engine) -> sessionmaker:
 
 def find_skating_age(dob: date) -> int:
     current_date = date.today()
-    if current_date.month > 7:
+    if current_date.month >= 7:
         skating_year = current_date.year
     else:
         skating_year = current_date.year - 1
@@ -77,35 +110,80 @@ def find_division(age:int, engine: Engine) -> int:
     age_group_info = session.query(Age_Group).filter(and_(Age_Group.min_age <= age, Age_Group.max_age >= age)).first()
     session.close()
     return age_group_info.id
-    
+
+def get_race_age_group_gender_race(competition_id, event, session):
+    return session.query(RHS.race_id, RHRD.ag_id, RHRD.gender_id)\
+        .outerjoin(RHR, RHS.id == RHR.rhs_id)\
+        .outerjoin(RHRD, RHR.id == RHRD.rhr_id)\
+        .filter(and_(RHS.competition_id == competition_id, RHS.event == event))\
+        .distinct().order_by(RHRD.ag_id).all()
+
+class RaceResult:
+    def __init__(self, skater_id, race_id, competition_id, gender_id, age_group_id, event, time, name):
+        self.skater_id = skater_id
+        self.race_id = race_id
+        self.competition_id = competition_id
+        self.gender_id = gender_id
+        self.age_group_id = age_group_id
+        self.event = event
+        self.name = name
+        self.time = time
+
+class RaceAgeGroupResultService:
+    def __init__(self, engine: Engine):
+        self.session = prep_session(engine=engine)
+
+    def create_race_age_group_result(self, competition_id: int, event: int):
+        AGGR = self.session.query(RHS.race_id, RHRD.ag_id, RHRD.gender_id).outerjoin(RHR, RHS.id == RHR.rhs_id)\
+            .outerjoin(RHRD, RHR.id == RHRD.rhr_id).where(and_(RHS.competition_id == competition_id, RHS.event == event))\
+            .distinct().order_by(RHRD.ag_id).all()
+
+        race = self.session.query(Race)
+        gender = self.session.query(Gender)
+        age_group = self.session.query(Age_Group)
+        competition = self.session.query(Competition)
+
+        for row in AGGR:
+            ag_id = row.ag_id
+            gender_id = row.gender_id
+            race_id = row.race_id
+            if not self.session.query(exists().where(and_(RAGR.ag_id == ag_id, RAGR.competition_id == competition_id, RAGR.gender_id == gender_id, RAGR.event == event))).scalar():
+                name = (
+                    f"{competition.where(Competition.id == competition_id).first().name} "
+                    f"{gender.where(Gender.id == gender_id).first().name} "
+                    f"{age_group.where(Age_Group.id == ag_id).first().name} "
+                    f"{race.where(Race.id == race_id).first().name}"
+                )
+                new_ragr = Race_Age_Group_Result(ag_id=ag_id, competition_id=competition_id, race_id=race_id, gender_id=gender_id, event=event, name=name)
+                self.session.add(new_ragr)
+                self.session.commit()
+        self.session.close()
+
+
+
+def create_race_result(race_id, competition_id, gender_id, age_group_id, event, name):
+    return RaceResult(race_id, competition_id, gender_id, age_group_id, event, name)
 
 def create_race_age_group_result(competition_id: int, event: int, engine: Engine) -> None:  # Checked
     session = prep_session(engine=engine)
     # competition_id = (competition_id)
     # event = int(event)
-    print(competition_id, event)
+
 
     #Age_Group_Gender_Race
-    AGGR = session.query(RHS.race_id, RHRD.ag_id, RHRD.gender_id).outerjoin(RHR, RHS.id == RHR.rhs_id)\
-        .outerjoin(RHRD, RHR.id == RHRD.rhr_id).where(and_(RHS.competition_id == competition_id, RHS.event == event))\
-        .distinct().order_by(RHRD.ag_id).all()
-
-    race = session.query(Race)
-    gender = session.query(Gender)
-    age_group = session.query(Age_Group)
-    competition = session.query(Competition)
+    AGGR = get_race_age_group_gender_race(competition_id, event, session)
 
     for row in AGGR:
         ag_id = row.ag_id
         gender_id = row.gender_id
         race_id = row.race_id
-        print(ag_id, gender_id, race_id)
+        # print(ag_id, gender_id, race_id)
         if not session.query(exists().where(and_(RAGR.ag_id == ag_id, RAGR.competition_id == competition_id, RAGR.gender_id == gender_id, RAGR.event == event))).scalar():
             name = (
-                f"{competition.where(Competition.id == competition_id).first().name} "
-                f"{gender.where(Gender.id == gender_id).first().name} "
-                f"{age_group.where(Age_Group.id == ag_id).first().name} "
-                f"{race.where(Race.id == race_id).first().name}"
+                f"{get_competition(competition_id, session).name} "
+                f"{get_gender(gender_id, session).name} "
+                f"{get_age_group(ag_id, session).name} "
+                f"{get_race(race_id, session).name}"
             )
             new_ragr = Race_Age_Group_Result(ag_id=ag_id, competition_id=competition_id, race_id=race_id, gender_id=gender_id, event=event, name=name)
             session.add(new_ragr)
@@ -184,7 +262,7 @@ def import_schedule(schedule_path: str) -> dict:  # Checked
             heat_skaters.append(skater_info)
         race_heat_schedules[f'race{idx}'] = {
             'heat_info': heat_info, 'skaters': heat_skaters}
-    print(race_heat_schedules)
+    # print(race_heat_schedules)
     return race_heat_schedules
     #create_race_heat_schedule_detail(race_heat_schedules, engine)
 
@@ -424,51 +502,16 @@ def rank_competition_age_group_result(competition_id: int, engine: Engine) -> No
                 session.commit()
     session.close()
 
+'''
+club: dict
+keys = ['state_id', 'country_id', 'us_based', 'name', 'abbreviation']
+'''
+    
 
-def update_club(club_file: str, engine: Engine) -> None:
-    new_clubs = pd.read_csv(club_file)
 
-    for idx, row in new_clubs.iterrows():
-        abbreviation = row['abbreviation']
-        exist_check = (
-            f'select exists('
-            f'select 1 from club '
-            f'where abbreviation = \'{abbreviation}\');'
-        )
-        if not engine.execute(exist_check).fetchall()[0][0]:
-            qry = (
-                f'insert into club(us_based, name, abbreviation) '
-                f'values ({row["us_based"]}, \'{row["name"]}\', \'{abbreviation}\')'
-            )
-            engine.execute(qry)
 '''
 skater: dict
 keys = ['club_id', 'gender_id', 'clube_member_number', 'first_name', 'last_name', 'dob',
  'ngb_member_number, 'ngb_name']
 '''
-def update_skater(skater: dict, engine: Engine) -> None:
-    exist_check = (
-        f'select exists('
-        f'select 1 from skater '
-        f'where club_member_number = {skater["club_member_number"]};'
-    )
-    if not engine.execute(exist_check).fetchall()[0][0]:
-        qry = (
-            f'insert into skater(club_id, gender_id, club_member_number, first_name, last_name, dob, ngb_member_number, ngb_name) '
-            f'values ({skater["club_id"]}, {skater["gender_id"]}, {skater["club_member_number"]}, \'{skater["first_name"]}\', '
-            f'\'{skater["last_name"]}\', {skater["dob"]}, {skater["ngb_member_number"]}, \'{skater["ngb_name"]}\';',
-        )
-        engine.execute(qry)
-
-def check_skater(skater: dict, engine: Engine) -> bool:
-    session = prep_session(engine=engine)
-    #skater dict should contain incomplete info so check based on supplied info
-    skater_info = {key: value for key, value in skater.items() if value is not None}
-    where_clause = ''
-    for key in skater_info.keys():
-        if len(where_clause) == 0:
-            where_clause += f'Skater.{key} == {key}'
-        else:
-            where_clause += f', Skater.{key} == {key}'
-    return session.query(exists().where(and_(*where_clause))).scalar()
 
