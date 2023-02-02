@@ -110,6 +110,7 @@ def generate_event_schedule_list_report(competition_id: int, event: int, report_
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
     generate_report(report_name, report_path, reports)
+    session.close()
 
 def generate_age_group_report_name(competition_id: int, ag_id: int, race_id: int, gender_id: int, engine: Engine) -> str:
     session = prep_session(engine)
@@ -117,6 +118,7 @@ def generate_age_group_report_name(competition_id: int, ag_id: int, race_id: int
     gender_name = session.query(Gender).where(Gender.id == gender_id).first().name
     race_name = session.query(Race).where(Race.id == race_id).first().name
     competition_name = session.query(Competition).where(Competition.id == competition_id).first().name
+    session.close()
     return f"{competition_name} {gender_name.upper()} {age_group_name.upper()} {race_name}"
 
 def generate_age_group_report(competition_id: int, event: int, report_path: str, engine: Engine) -> None:
@@ -139,7 +141,7 @@ def generate_age_group_report(competition_id: int, event: int, report_path: str,
             .outerjoin(Club, Club.id == Skater.club_id)\
             .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
             .outerjoin(RHS, RHS.id == RHR.rhs_id)\
-            .fiter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).all()
+            .filter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).all()
         report = pd.DataFrame(report, columns=report_cols)
         report['Time'] = report['Time'].apply(convert_time_to_string)
         rdr = session.query(RAGR.race_id, RAGR.gender_id, RAGR.ag_id).where(RAGR.id == ragr_id).first()
@@ -150,6 +152,7 @@ def generate_age_group_report(competition_id: int, event: int, report_path: str,
         title_row = pd.DataFrame({'Place': age_group_result_name, 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':'', 'Score': ''}, index=[0])
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
+    session.close()
 
     generate_report(report_name, report_path, reports)  
 
@@ -175,6 +178,7 @@ def generate_race_heat_report(competition_id: int, event: int, report_path: str,
         report['Time'] = report['Time'].apply(convert_time_to_string)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
+    session.close()
     generate_report(report_name, report_path, reports)
 
 def generate_competition_age_group_report(competition_id: int, report_path: str, engine: Engine) -> None:
@@ -194,5 +198,6 @@ def generate_competition_age_group_report(competition_id: int, report_path: str,
         report = pd.DataFrame(report, columns=report_cols)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
+    session.close()
     generate_report(report_name, report_path, reports)     
  
