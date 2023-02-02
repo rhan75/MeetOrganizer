@@ -98,7 +98,7 @@ race = Table(
     'race', meta,
     Column('id', Integer, primary_key = True),
     Column('rs_id', Integer, ForeignKey('race_style.id'), nullable=False),
-    Column('name', String(15)),
+    Column('name', String(20)),
     Column('distance', Integer),
     Column('team', Boolean),
 )
@@ -133,7 +133,7 @@ race_heat_schedule = Table(
     Column('heat_id', Integer, ForeignKey('heat.id'), nullable=False),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
     Column('event', Integer),
-    Column('name', String(50)),
+    Column('name', String(100)),
     Column('total_skaters', Integer),
     Column('team_race', Boolean),
 )
@@ -189,7 +189,7 @@ race_age_group_result_detail = Table(
     Column('rhrd_id', Integer, ForeignKey('race_heat_result_detail.id'), nullable=False),
     Column('time_in_seconds', Float, nullable=True), #in seconds
     Column('rank', Integer, nullable=True),
-    Column('score', float, nullable=True),
+    Column('score', Float, nullable=True),
 )
 
 competition_age_group_result = Table(
