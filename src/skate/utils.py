@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import exists, and_
 from sqlalchemy.orm import sessionmaker, aliased
@@ -22,6 +23,7 @@ RHSD = aliased(Race_Heat_Schedule_Detail)
 RAGRD = aliased(Race_Age_Group_Result_Detail)
 RS = aliased(Race_Style)
 
+
 def is_valid_time(time_string):
     '''
     Get time_string
@@ -43,7 +45,6 @@ def update_object(session: session.Session, model_name: decl_api.DeclarativeMeta
     Conflict - 1 record exist but properties don't match
     Exist - 1 match record
     Added - Inserted a new record
-    
     '''
     instance = get_object_info(session, model_name, **main_keys)
     if len(instance) == 1:
@@ -84,8 +85,9 @@ def get_object_info(session, model_name, **kwargs):
     Return list of rows from model_name based on keyward arguments
     '''
     query = session.query(model_name)
-    for attr, value in kwargs.items():
-        query = query.filter(getattr(model_name, attr) == value)
+    if kwargs:
+        for attr, value in kwargs.items():
+            query = query.filter(getattr(model_name, attr) == value)
     result = query.all()
     session.close()
     return result
@@ -159,7 +161,7 @@ def get_heat_schedule(lines: list) -> list:  # Checked
             heat = []
     return heats
 
-def import_schedule(schedule_path: str) -> dict:  # Checked
+def import_schedule(schedule_path: str, engine: Engine) -> dict:  # Checked
     '''
     Open the schedule file.
     Read lines of the schedule file.
@@ -171,7 +173,7 @@ def import_schedule(schedule_path: str) -> dict:  # Checked
         Construct skater_info dict.
         Add skater_info into race_heat_schedule dict
     Repeat until all heats are processed.
-    Return race_heat_schedules dict
+    Pass race_heat_schedules dict to create_race_heat_schedule_and_detail
     '''
     race_heat_schedules = {}
     with open(schedule_path, 'r') as schedules:
@@ -193,13 +195,14 @@ def import_schedule(schedule_path: str) -> dict:  # Checked
             heat_skaters.append(skater_info)
         race_heat_schedules[f'race{idx}'] = {
             'heat_info': heat_info, 'skaters': heat_skaters}
-    # print(race_heat_schedules)
-    return race_heat_schedules
-    #create_race_heat_schedule_detail(race_heat_schedules, engine)
+    # return race_heat_schedules
+    create_race_heat_schedule_and_detail(race_heat_schedules, engine)
 
 def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engine) -> None:
-    session = prep_session(engine=engine)
+    '''
     
+    '''
+    session = prep_session(engine=engine)
     for key, each_heat in race_heat_schedules.items():
         total_skaters = len(each_heat['skaters'])
         distance = int(each_heat['heat_info']['distance'])
@@ -216,7 +219,7 @@ def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engi
 
         main_keys = {'race_id':race_id, 'heat_id':heat_id, 'competition_id':competition_id,'event':event}
         new_heat_schedule = {'race_id':race_id, 'heat_id':heat_id, 'competition_id':competition_id,'event':event, 'name':heat_name, 'total_skaters':total_skaters, 'team_race':team_bool}
-        update_object(session, RHS, new_heat_schedule, main_keys)
+        update_object(session, Race_Heat_Schedule, new_heat_schedule, main_keys)
         
         current_race_heat_schedule = get_object_info(session, RHS, name=heat_name)[0]
         rhs_id = current_race_heat_schedule.id
@@ -226,7 +229,7 @@ def create_race_heat_schedule_and_detail(race_heat_schedules: dict, engine: Engi
             lane_id = get_object_info(session, Lane, name=heat_skater['lane_num'])[0].id
             main_keys = {'rhs_id':rhs_id, 'skater_id':skater_id}
             new_rhsd_record = {'rhs_id':rhs_id, 'skater_id':skater_id, 'lane_id':lane_id}
-            update_object(session, RHSD, new_rhsd_record, main_keys)
+            update_object(session, Race_Heat_Schedule_Detail, new_rhsd_record, main_keys)
             update_competition_skater(competition_id, skater_id, engine)
     session.close()
 
@@ -279,7 +282,7 @@ def create_race_heat_result(result_file: str, engine: Engine) -> dict:  # Checke
     rhs_id = schedule.id
     main_keys = {'rhs_id': rhs_id}
     race_result = {'rhs_id': rhs_id, 'timestamp':heat_result['timestamp']}
-    update_result = update_object(session, RHR, race_result, main_keys)
+    update_result = update_object(session, Race_Heat_Result, race_result, main_keys)
     if update_result in ['Conflicted', 'Duplicates']:
         return {'status': 'failed'}
     else:
@@ -287,14 +290,14 @@ def create_race_heat_result(result_file: str, engine: Engine) -> dict:  # Checke
     session.close()
     return {'status': 'success', 'rhr_id': rhr_id, 'time_type': heat_result['time_type']}
 
-def format_time(time_string: str) -> timedelta:
+def format_time(time_string: str) -> dict:
     if is_valid_time(time_string):
         time_format = '%M:%S.%f'
         time_datetime = datetime.strptime(time_string, time_format)
         time_in_seconds = (time_datetime.minute *60) + time_datetime.second + (time_datetime.microsecond/1000000)
     else:
         time_in_seconds = float(time_string)
-    return timedelta(seconds=time_in_seconds)
+    return {'time_in_seconds': time_in_seconds, 'time_value':timedelta(seconds=time_in_seconds)}
 
 def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: Engine) -> None:  # Checked
     session = prep_session(engine=engine)
@@ -308,12 +311,15 @@ def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: E
         if rank in ['dnf', 'dns']:
             status_id = get_object_info(session, Status, name=rank)[0].id
             rank = None
+            time_in_seconds = None
             time_value = None
         else:
             rank = int(rank)
             status_id = get_object_info(session, Status, name='finished')[0].id
-            time_in_seconds = each_result[1]['time']
-            time_value = format_time(time_in_seconds)
+            time_string = each_result[1]['time']
+            time_dict = format_time(time_string)
+            time_in_seconds = time_dict['time_in_seconds']
+            time_value = time_dict['time_value']
         st_id = None
         club_member_number = each_result[1]['club_member_number']
         lane_name = each_result[1]['lane'][1:]
@@ -329,7 +335,7 @@ def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: E
             'status_id':status_id, 'ag_id':ag_id, 'gender_id':gender_id, 'time_type':time_type, 
             'time': time_value, 'time_in_seconds': time_in_seconds,'rank':rank
         }
-        update_object(session, RHRD, new_rhrd_record, main_keys)
+        update_object(session, Race_Heat_Result_Detail, new_rhrd_record, main_keys)
     session.close()
 
 def get_race_age_group_gender_race(competition_id, event, session):
@@ -339,47 +345,6 @@ def get_race_age_group_gender_race(competition_id, event, session):
         .filter(and_(RHS.competition_id == competition_id, RHS.event == event))\
         .distinct().order_by(RHRD.ag_id).all()
 
-class RaceResult:
-    def __init__(self, skater_id, race_id, competition_id, gender_id, age_group_id, event, time, name):
-        self.skater_id = skater_id
-        self.race_id = race_id
-        self.competition_id = competition_id
-        self.gender_id = gender_id
-        self.age_group_id = age_group_id
-        self.event = event
-        self.name = name
-        self.time = time
-
-class RaceAgeGroupResultService:
-    def __init__(self, engine: Engine):
-        self.session = prep_session(engine=engine)
-
-    def create_race_age_group_result(self, competition_id: int, event: int):
-        AGGR = self.session.query(RHS.race_id, RHRD.ag_id, RHRD.gender_id).outerjoin(RHR, RHS.id == RHR.rhs_id)\
-            .outerjoin(RHRD, RHR.id == RHRD.rhr_id).where(and_(RHS.competition_id == competition_id, RHS.event == event))\
-            .distinct().order_by(RHRD.ag_id).all()
-
-        race = self.session.query(Race)
-        gender = self.session.query(Gender)
-        age_group = self.session.query(Age_Group)
-        competition = self.session.query(Competition)
-
-        for row in AGGR:
-            ag_id = row.ag_id
-            gender_id = row.gender_id
-            race_id = row.race_id
-            if not self.session.query(exists().where(and_(RAGR.ag_id == ag_id, RAGR.competition_id == competition_id, RAGR.gender_id == gender_id, RAGR.event == event))).scalar():
-                name = (
-                    f"{competition.where(Competition.id == competition_id).first().name} "
-                    f"{gender.where(Gender.id == gender_id).first().name} "
-                    f"{age_group.where(Age_Group.id == ag_id).first().name} "
-                    f"{race.where(Race.id == race_id).first().name}"
-                )
-                new_ragr = Race_Age_Group_Result(ag_id=ag_id, competition_id=competition_id, race_id=race_id, gender_id=gender_id, event=event, name=name)
-                self.session.add(new_ragr)
-                self.session.commit()
-        self.session.close()
-
 def create_race_age_group_result(competition_id: int, event: int, engine: Engine) -> None:  # Checked
     session = prep_session(engine=engine)
     AGGR = get_race_age_group_gender_race(competition_id, event, session)
@@ -387,6 +352,7 @@ def create_race_age_group_result(competition_id: int, event: int, engine: Engine
         ag_id = row.ag_id
         gender_id = row.gender_id
         race_id = row.race_id
+        agc_id = None
         name = (
             f"{get_object_info(session, Competition, id=competition_id)[0].name} "
             f"{get_object_info(session, Gender, id=gender_id)[0].name} "
@@ -396,27 +362,28 @@ def create_race_age_group_result(competition_id: int, event: int, engine: Engine
         main_keys = {'ag_id':ag_id, 'competition_id':competition_id, 'race_id':race_id, 'gender_id':gender_id, 'event':event}
         new_ragr = {
             'ag_id':ag_id, 'competition_id':competition_id, 'race_id':race_id,
-            'gender_id':gender_id, 'event':event, 'name':name
+            'agc_id':agc_id, 'gender_id':gender_id, 'event':event, 'name':name
             }
-        update_object(session, RAGR, new_ragr, main_keys)
+        update_object(session, Race_Age_Group_Result, new_ragr, main_keys)
     session.close()
 
 # Checked
 def create_race_age_group_result_detail(competition_id: int, event: int, race_id: int, engine: Engine) -> None:
     session = prep_session(engine=engine)
+
     rhs_ids = session.query(RHS.id).where(and_(RHS.competition_id == competition_id, RHS.race_id == race_id, RHS.event == event)).all()
-    rhs_id_list = [rhs_id.id for rhs_id in rhs_ids]
-    for rhs_id in rhs_id_list:
-        rhr_id = session.query(RHR.id).where(RHR.rhs_id == rhs_id).first().id
-        rhrd_results = session.query(RHRD).where(RHRD.rhr_id == rhr_id).all()
+    kwargs = {'competition_id':competition_id, 'race_id':race_id, 'event':event}
+    rhs_ids = get_object_info(session, RHS, **kwargs)
+    for row in rhs_ids:
+        rhr_id = get_object_info(session, RHR, rhs_id=row.id)[0].id
+        rhrd_results = get_object_info(session, RHRD, rhr_id=rhr_id)
         for result in rhrd_results:
             ag_id, rhrd_id, gender_id, time_in_seconds = result.ag_id, result.id, result.gender_id, result.time_in_seconds
-            print(ag_id, rhrd_id, gender_id, time_in_seconds, rhr_id, rhs_id, race_id)
-            ragr_id = session.query(RAGR.id).where(and_(RAGR.event == event, RAGR.ag_id == ag_id, RAGR.competition_id == competition_id, RAGR.race_id == race_id, RAGR.gender_id == gender_id)).first().id
-            if not session.query(exists().where(and_(RAGRD.ragr_id == ragr_id, RAGRD.rhrd_id==rhrd_id))).scalar():
-                new_ragrd = Race_Age_Group_Result_Detail(ragr_id=ragr_id, rhrd_id=rhrd_id, time_in_seconds=time_in_seconds)
-                session.add(new_ragrd)
-                session.commit()
+            ragr_id_args = {'event':event, 'ag_id':ag_id, 'competition_id':competition_id, 'race_id':race_id, 'gender_id':gender_id}
+            ragr_id = get_object_info(session, RAGR, **ragr_id_args)[0].id
+            main_keys = {'ragr_id':ragr_id, 'rhrd_id':rhrd_id}
+            new_ragrd = {'ragr_id':ragr_id, 'rhrd_id':rhrd_id, 'time_in_seconds':time_in_seconds}
+            update_object(session, Race_Age_Group_Result_Detail, new_ragrd, main_keys)
     session.close()
 
 def rank_race_age_group_result(competition_id: int, event: int, engine: Engine) -> None: #checked
@@ -431,16 +398,13 @@ def rank_race_age_group_result(competition_id: int, event: int, engine: Engine) 
     for ragr_id in ragr_ids: #For all races taken place for divisions and genders, iterate and get race_age_group_result ID
         ranking = session.query(RAGRD.id, RAGRD.ragr_id, RHRD.id, RHRD.time).outerjoin(RHRD, RHRD.id==RAGRD.rhrd_id)\
             .outerjoin(RHR, RHR.id == RHRD.rhr_id).outerjoin(RHS, RHS.id==RHR.rhs_id)\
-            .where(and_(RHS.competition_id == competition_id, RHS.event == event, RAGRD.ragr_id == ragr_id)).all()
-        # ranking = session.query(RAGRD, RHRD, RHR, RHS).where(and_(RHS.competition_id == competition_id,\
-        #     RHS.event == event, RAGRD.ragr_id == ragr_id)).with_entities(RAGRD.id, RAGRD.ragr_id, RHRD.id, RHRD.time).all()
+            .where(and_(RHS.competition_id == competition_id, RHS.event == event, RAGRD.ragr_id == ragr_id, RAGRD.time_in_seconds != None)).all()
         if len(ranking) > 0:
             ranking = pd.DataFrame(ranking, columns=ranking_col)
             ranking['ranking'] = ranking['time'].rank().astype(int)
             for idx, each_rank in ranking.iterrows():
                 ragrd_id = each_rank['ragrd_id']
                 update_ragrd_rank = session.query(RAGRD).where(RAGRD.id == ragrd_id).first()
-                # print(each_rank)
                 if each_rank.isna()['ranking']:
                     rank_score = 0
                 else:
@@ -464,7 +428,6 @@ def create_competition_age_group_result(competition_id: int, engine: Engine) -> 
     for agg in ag_genders:
         ag_id = agg.ag_id
         gender_id = agg.gender_id
-        print(ag_id, gender_id)
         age_group_name = session.query(Age_Group).where(Age_Group.id == ag_id).first().name
         gender_name = session.query(Gender).where(Gender.id == gender_id).first().name
         report_name = f"{competition_name} {gender_name} {age_group_name} Result"
@@ -487,7 +450,6 @@ def create_competition_age_group_result_detail(competition_id: int, engine: Engi
 
         ragr_ids = session.query(RAGR.id).where(and_(RAGR.competition_id==competition_id,\
             RAGR.ag_id==ag_id, RAGR.gender_id == gender_id)).distinct().all()
-        #print(races)
         for each_race in ragr_ids:
 
         # for idx, each_race in races.iterrows():
@@ -497,18 +459,13 @@ def create_competition_age_group_result_detail(competition_id: int, engine: Engi
             for record in records:
                 skater_id = record.skater_id
                 score = record.score
-                # print(score)
-  
-                if skater_id in event_scores.keys():
-                    event_scores[skater_id] += score
-                else:
-                    event_scores[skater_id] = score
-            # print(event_scores)
-            # print(skater_id, event_scores[skater_id])
+                if score:
+                    if skater_id in event_scores.keys():
+                        event_scores[skater_id] += score
+                    else:
+                        event_scores[skater_id] = score
         for skater_id in event_scores.keys():
-            print(skater_id, event_scores[skater_id])
             if not session.query(exists().where(and_(CAGRD.cagr_id == cagr_id, CAGRD.skater_id == skater_id))).scalar():    
-                print(skater_id, event_scores[skater_id])
                 new_cagrd = Competition_Age_Group_Result_Detail(cagr_id=cagr_id, skater_id=skater_id, total_score=event_scores[skater_id])
                 session.add(new_cagrd)
                 session.commit()
@@ -536,7 +493,6 @@ def rank_competition_age_group_result(competition_id: int, engine: Engine) -> No
             for idx, each_rank in ranking.iterrows():
                 cagrd_id = each_rank['id']
                 skater_rank = each_rank['rank']
-                print(type(skater_rank))
                 update_cagrd = session.query(CAGRD).where(CAGRD.id == cagrd_id).first()
                 update_cagrd.rank = skater_rank
                 session.commit()
