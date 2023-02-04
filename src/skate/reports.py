@@ -141,7 +141,7 @@ def generate_age_group_report(competition_id: int, event: int, report_path: str,
             .outerjoin(Club, Club.id == Skater.club_id)\
             .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
             .outerjoin(RHS, RHS.id == RHR.rhs_id)\
-            .filter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).all()
+            .filter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).order_by(RAGRD.rank).all()
         report = pd.DataFrame(report, columns=report_cols)
         report['Time'] = report['Time'].apply(convert_time_to_string)
         rdr = session.query(RAGR.race_id, RAGR.gender_id, RAGR.ag_id).where(RAGR.id == ragr_id).first()
