@@ -220,7 +220,7 @@ class Race_Age_Group_Result(Base):
     competition_id = Column(Integer, ForeignKey('competition.id'), nullable=False)
     ag_id = Column(Integer, ForeignKey('age_group.id'), nullable=False)
     race_id = Column(Integer, ForeignKey('race.id'), nullable=False)
-    agc_id = Column(Integer, ForeignKey('agc.id'), nullable=True)
+    agc_id = Column(Integer, ForeignKey('age_group_class.id'), nullable=True)
     gender_id = Column(Integer, ForeignKey('gender.id'), nullable=False)
     event = Column(Integer)
     name = Column(String)
