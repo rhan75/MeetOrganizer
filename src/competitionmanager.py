@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 import toml
 from gui.controller import App
 
-def main():
+def main(engine):
     app = App(engine=engine)
     app.title('Short Track Competition Organizer')
     app.geometry('800x600')
@@ -15,4 +15,4 @@ if __name__=="__main__":
         config = toml.load(conf)
     engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")
 
-    main()
+    main(engine)

@@ -19,7 +19,7 @@ from gui.agegroupeventresultlayout import GenerateAgeGroupEventResultLayout
 from gui.competitionagegroupresultlayout import GenerateCompetitionAgeGroupResultLayout
 
 from skate.model import *
-from skate.utils import *
+from skate import utils
 
 
 # engine = create_engine('sqlite:///skatecompetition.db')
@@ -53,10 +53,14 @@ class App(tk.Tk):
         self.result = None
         self.directory = None
         self.competition_id = None
+        self.competition_name = None
         self.event = None
         self.gender = None
+        self.competitions = None
+        self.session = None
+        
+        self.create_const()
         self.create_menu()
-        self.competition = None
         
         container = tk.Frame(self)
         container.grid(row=0, column=0, sticky='nsew')
@@ -64,23 +68,24 @@ class App(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (MainScreenLayout, ImportScheduleLayout, ImportResultLayout):#, ProcessAgeGroupResultLayout, \
-            # ProcessCompetitionResultLayout, GenerateEventHeatResultLayout, GenerateNextScheduleListLayout, \
-            # GenerateAgeGroupEventResultLayout, GenerateCompetitionAgeGroupResultLayout):
+        for F in (MainScreenLayout, ImportScheduleLayout, ImportResultLayout, ProcessAgeGroupResultLayout, \
+            ProcessCompetitionResultLayout, GenerateEventHeatResultLayout, GenerateNextScheduleListLayout, \
+            GenerateAgeGroupEventResultLayout, GenerateCompetitionAgeGroupResultLayout):
             frame = F(container, self)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nswe")
         self.show_frame("MainScreenLayout")
 
     def create_const(self):
-        self.session = self.prep_session(self.engine)
-        self.competition = get_object_info(session, Competition)
+        self.session = utils.prep_session(self.engine)
+        self.competitions = utils.get_object_info(self.session, self.Competition)
         
     def show_frame(self, name):
         frame = self.frames[name]
-        print('Changing')
-        print(name)
-        print(self.frames[name])
+        frame.clear_all()
+        # print('Changing')
+        # print(name)
+        # print(self.frames[name])
         frame.tkraise()
 
         # create the widgets for the import schedule layout
@@ -115,9 +120,9 @@ class App(tk.Tk):
     #         self.current_layout.clear()
     #     self.current_layout = layout_class(self.root, self.main_frame, self.engine)
 
-    def clear_main_frame(self):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy
+    # def clear_main_frame(self):
+    #     for widget in self.main_frame.winfo_children():
+    #         widget.destroy
 
     def main_screen_layout(self):
         self.show_frame("MainScreenLayout")
@@ -146,10 +151,10 @@ class App(tk.Tk):
     def competition_age_group_result_layout(self):
         self.show_frame("GenerateCompetitionAgeGroupResultLayout")
 
-    def clear(self):
-        # destroy all of the widgets in the main frame
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+    # def clear(self, name):
+    #     # destroy all of the widgets in the main frame
+    #     for widget in self.frame[name].winfo_children():
+    #         widget.destroy()
 
     def insert_text(self, widget, text):
         # widget = getattr(self, textbox)
@@ -167,9 +172,12 @@ class App(tk.Tk):
         self.result = None
         self.directory = None
         self.competition_id = None
+        self.competition_name = None
         self.event = None
         self.gender = None
-        self.competition_name = None
+        self.competitions = None
+        self.create_const()
+
         # self.competition = None
         # self.engine = None
     
@@ -181,6 +189,3 @@ class App(tk.Tk):
         self.directory = askdirectory()
         self.insert_text(textbox, self.directory)
 
-    def prep_session(self, engine: Engine):
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
