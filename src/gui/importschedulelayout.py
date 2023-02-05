@@ -16,7 +16,7 @@ class ImportScheduleLayout(tk.Frame):
             self.clear_all()
         # create the widgets for the import schedule layout
         
-        self.import_schedule_label = tk.Label(self, text='Import Schedule', font=('Helvetica', 24))
+        self.import_schedule_label = tk.Label(self, text='Import Schedule', font=('Arial', 24))
         self.import_schedule_label.grid(column=0, row=0)
 
         # self.import_schedule_label.pack(side='top')

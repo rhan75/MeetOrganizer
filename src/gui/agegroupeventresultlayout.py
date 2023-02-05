@@ -14,7 +14,7 @@ class GenerateAgeGroupEventResultLayout(tk.Frame):
     def create_widgets(self):
         comp_text = tk.StringVar()
 
-        self.title_label = tk.Label(self, text='Generate Age Group Result for Event', font=('helvetica', 24))
+        self.title_label = tk.Label(self, text='Generate Age Group Result for Event', font=('Arial', 24))
         self.title_label.grid(column=0, row=0, sticky='nsew')
 
         self.status_text = tk.Text(self, height=1)
@@ -53,7 +53,7 @@ class GenerateAgeGroupEventResultLayout(tk.Frame):
         self.button_main.grid(column=2, row=5, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='close', command=self.controller.destroy)
-        self.button_close.grid(column=2, row=5, sticky='nsew')
+        self.button_close.grid(column=3, row=5, sticky='nsew')
 
     def clear_all(self):
         self.controller.clear_all()

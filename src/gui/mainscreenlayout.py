@@ -12,32 +12,7 @@ class MainScreenLayout(tk.Frame):
 
     def create_widgets(self):
 
-        # self.main_frame = tk.Frame(self, width=800, height=100)
-        # self.main_frame.grid(row=0, sticky='nsew')
-
-        # self.main_label = tk.Label(self.main_frame, text='Skate Competition Manager', font=('Arial', 36))
-        # self.main_label.grid(row=0, sticky='nsew')
-        
-        # self.import_frame = tk.Frame(self, width=200, height=400)
-        # self.import_frame.grid(row=1, column=0, padx=10, pady=10)
-        # self.import_label = tk.Label(self, text='Import Section')
-        # self.import_label.grid(row=1, column=0)
-
-        # self.process_frame = tk.Frame(self, width=200, height=400)
-        # self.process_frame.grid(row=1, column=1, padx=10, pady=10)
-
-        # self.report_frame = tk.Frame(self, width=200, height=400)
-        # self.report_frame.grid(row=1, column=2, padx=10, pady=10)
-
-        # self.columnconfigure(0, weight=1)
-        # self.columnconfigure(1, weight=1)
-        # self.columnconfigure(2, weight=1)
-
-
-        # self.action_frame = tk.Frame(self)
-        # self.action_frame.grid(column=0, row=1, sticky='nsew')
-
-        text_font = ('Arial', 12, 'bold')
+        text_font = ('Time New Roman', 12, 'bold')
         self.main_frame = tk.Frame(self)
         self.main_frame.grid(row=0, columnspan=3, sticky='nsew')
 

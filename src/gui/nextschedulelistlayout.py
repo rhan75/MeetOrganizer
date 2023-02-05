@@ -57,7 +57,7 @@ class GenerateNextScheduleListLayout(tk.Frame):
         self.button_clear = ttk.Button(self.button_frame, text='Clear', command=self.clear_all)
         self.button_clear.grid(column=1, row=2, sticky='nsew')
     
-        self.button_main = ttk.Button(self.button_frame, text='Main', command=lambda: self.controller.show_frame("MainScreen"))
+        self.button_main = ttk.Button(self.button_frame, text='Main', command=lambda: self.controller.show_frame("MainScreenLayout"))
         self.button_main.grid(column=2, row=2, sticky='nsew')
 
         self.button_close = ttk.Button(self.button_frame, text='Close', command=self.controller.destroy)

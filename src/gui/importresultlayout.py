@@ -18,7 +18,7 @@ class ImportResultLayout(tk.Frame):
             self.clear_all()
        
         
-        self.result_label = tk.Label(self, text='Import Results', font=('Helvetica', 24))
+        self.result_label = tk.Label(self, text='Import Results', font=('Arial', 24))
         self.result_label.grid(column=0, row=0)
         self.result_text = tk.Text(self, state='disabled', height=1)
         self.result_text.grid(column=0, row=1, sticky='nsew')

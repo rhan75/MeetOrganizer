@@ -15,7 +15,7 @@ class ProcessCompetitionResultLayout(tk.Frame):
 
         comp_text = tk.StringVar()
 
-        self.title_label = tk.Label(self, text='Process Final Competition Result', font=('helvetica', 24))
+        self.title_label = tk.Label(self, text='Process Final Competition Result', font=('Arial', 24))
         self.title_label.grid(column=0, row=0)
 
         self.status_text = tk.Text(self, height=1)

@@ -17,7 +17,7 @@ class GenerateEventHeatResultLayout(tk.Frame):
 
         comp_text = tk.StringVar()
 
-        self.title_label = tk.Label(self, text='Generate Heat Result for Event', font=('helvetica', 24))
+        self.title_label = tk.Label(self, text='Generate Heat Result for Event', font=('Arial', 24))
         self.title_label.grid(column=0, row=0, sticky='nsew')
 
         self.status_text = tk.Text(self, height=1)
