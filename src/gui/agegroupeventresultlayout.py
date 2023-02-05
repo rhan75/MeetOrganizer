@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from skate import reports
 from skate import utils
-from skate.model import *
+from models.model import * 
 
 class GenerateAgeGroupEventResultLayout(tk.Frame):
     def __init__(self, parent, controller):

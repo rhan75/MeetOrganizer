@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from skate.model import *
+from models.model import *
 from skate.utils import *
 
 class MainScreenLayout(tk.Frame):

@@ -1,12 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
 from tkinter.filedialog import askopenfilename, askdirectory
 
-from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm import aliased
 from sqlalchemy.engine.base import Engine
 
-import toml
-import pandas as pd
 
 from gui.mainscreenlayout import MainScreenLayout
 from gui.importschedulelayout import ImportScheduleLayout
@@ -18,7 +15,7 @@ from gui.nextschedulelistlayout import GenerateNextScheduleListLayout
 from gui.agegroupeventresultlayout import GenerateAgeGroupEventResultLayout
 from gui.competitionagegroupresultlayout import GenerateCompetitionAgeGroupResultLayout
 
-from skate.model import *
+from models.model import *
 from skate import utils
 
 

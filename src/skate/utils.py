@@ -5,24 +5,7 @@ from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm import decl_api, session
 import pandas as pd
 from datetime import timedelta, date, datetime
-from .model import *
-
-# Aliases for DB Tables ORM
-AG = aliased(Age_Group)
-AGC = aliased(Age_Group_Class)
-
-CS = aliased(Competition_Skater)
-CAGR = aliased(Competition_Age_Group_Result)
-CAGRD = aliased(Competition_Age_Group_Result_Detail)
-
-RHS = aliased(Race_Heat_Schedule)
-RHR = aliased(Race_Heat_Result)
-RHRD = aliased(Race_Heat_Result_Detail)
-RAGR = aliased(Race_Age_Group_Result)
-RHSD = aliased(Race_Heat_Schedule_Detail)
-RAGRD = aliased(Race_Age_Group_Result_Detail)
-RS = aliased(Race_Style)
-
+from models.model import *
 
 def is_valid_time(time_string):
     '''

@@ -3,7 +3,7 @@ from tkinter import ttk
 from sqlalchemy import and_
 
 from skate import utils
-from skate.model import *
+from models.model import *
 
 class ProcessAgeGroupResultLayout(tk.Frame):
     def __init__(self, parent, controller):

@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from skate import utils
 
-from skate.model import *
+from models.model import *
 from skate.utils import * 
 
 class ProcessCompetitionResultLayout(tk.Frame):
