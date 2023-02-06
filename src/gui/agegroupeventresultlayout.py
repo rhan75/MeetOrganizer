@@ -35,7 +35,7 @@ class GenerateAgeGroupEventResultLayout(tk.Frame):
         # self.comp_combobox['values'] = self.competition['name'].to_list()
         self.comp_combobox['values'] = [row.name for row in self.controller.competitions]
 
-        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
+        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=lambda: self.controller.select_competition(self.comp_combobox, self.status_text, self.show_event_selector))
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
@@ -64,38 +64,37 @@ class GenerateAgeGroupEventResultLayout(tk.Frame):
         msg = f'Age Group Report for event {self.controller.event} from {self.controller.competition_name} has been generated in {self.controller.directory}'
         self.controller.insert_text(self.status_text, msg)
     
-    def select_competition(self):  
-        self.controller.competition_name =  self.comp_combobox.get()
-        #print(self.competition_name)
-        if self.controller.competition_name is not None:
-            self.controller.competition_id = utils.get_object_info(self.controller.session, Competition, name=self.controller.competition_name)[0].id
+    # def select_competition(self):  
+    #     self.controller.competition_name =  self.comp_combobox.get()
+    #     #print(self.competition_name)
+    #     if self.controller.competition_name is not None:
+    #         self.controller.competition_id = utils.get_object_info(self.controller.session, Competition, name=self.controller.competition_name)[0].id
         
-            evtrace = utils.get_object_info(self.controller.session, Race_Heat_Schedule, competition_id=self.controller.competition_id)
-            event_race = set(row.event for row in evtrace)
+    def show_event_selector(self):
+        evtrace = utils.get_object_info(self.controller.session, Race_Heat_Schedule, competition_id=self.controller.competition_id)
+        event_race = set(row.event for row in evtrace)
+        values = [row for row in event_race]
+        values.sort()
+        event_text = tk.StringVar()
 
-            event_text = tk.StringVar()
-
-            self.event_frame = ttk.Frame(self)
-            self.event_frame.grid(column=0, row=3, sticky='nsew')
+        self.event_frame = ttk.Frame(self)
+        self.event_frame.grid(column=0, row=3, sticky='nsew')
 
 
-            self.select_event_label = tk.Label(self.comp_frame,text='select the event')
-            self.select_event_label.grid(column=0, row=3, sticky='nsew')
+        self.select_event_label = tk.Label(self.comp_frame,text='select the event')
+        self.select_event_label.grid(column=0, row=3, sticky='nsew')
 
-            self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
+        self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
             # values = event_race['event'].to_list() #event value
-            values = [row for row in event_race]
-            values.sort()
-            self.event_combobox['values'] = values
-            values = None
-            self.event_combobox.grid(column=1, row=3, sticky='nsew')
-            event_text.set('select competition')
 
-            self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
-            self.event_combobox_button.grid(column=2, row=3, sticky='nsew')
-        else:
-            msg = 'please select the competition.'
-            self.insert_text('status_text', msg)
+        self.event_combobox['values'] = values
+        values = None
+        self.event_combobox.grid(column=1, row=3, sticky='nsew')
+        event_text.set('Select the event')
+
+        self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
+        self.event_combobox_button.grid(column=2, row=3, sticky='nsew')
+
 
     def select_event(self):
         self.controller.event = self.event_combobox.get()
