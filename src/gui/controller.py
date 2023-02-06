@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter.filedialog import askopenfilename, askdirectory
 
 from sqlalchemy.orm import aliased
@@ -102,25 +103,7 @@ class App(tk.Tk):
         action_menu.add_command(label="Generate Next Schedule List", command=self.next_schedule_list_layout)
         action_menu.add_command(label="Generate Age Group Event Result", command=self.age_group_event_result_layout)
         action_menu.add_command(label="Generate Competition Result", command=self.competition_age_group_result_layout)
-
-    # def create_main_frame(self):
-    #     self.main_frame = tk.Frame(self)
-    #     self.main_frame.grid()
-
-    # def show_layout(self, layout_class):
-    #     if self.current_layout is not None:
-    #         self.current_layout.clear()
-    #     self.current_layout = layout_class(self.root, self.main_frame)
     
-    # def show_layout(self, layout_class):
-    #     if self.current_layout is not None:
-    #         self.current_layout.clear()
-    #     self.current_layout = layout_class(self.root, self.main_frame, self.engine)
-
-    # def clear_main_frame(self):
-    #     for widget in self.main_frame.winfo_children():
-    #         widget.destroy
-
     def main_screen_layout(self):
         self.show_frame("MainScreenLayout")
 
@@ -148,10 +131,39 @@ class App(tk.Tk):
     def competition_age_group_result_layout(self):
         self.show_frame("GenerateCompetitionAgeGroupResultLayout")
 
-    # def clear(self, name):
-    #     # destroy all of the widgets in the main frame
-    #     for widget in self.frame[name].winfo_children():
-    #         widget.destroy()
+    def select_competition(self, comp_combobox, text_box, next_function):  
+        self.competition_name = comp_combobox.get()
+        #print(self.competition_name)
+        if self.competition_name is not None:
+            self.competition_id = utils.get_object_info(self.session, Competition, name=self.competition_name)[0].id
+            next_function()
+            
+        else:
+            msg = 'please select the competition.'
+            self.insert_text(text_box, msg)
+
+    def select_event(self, event_combobox, text_box, next_function):
+        self.event = event_combobox.get()
+
+        if self.event is not None:
+            next_function()
+        else:
+            msg = 'please select the event.'
+            self.insert_text(text_box, msg)
+
+    # def show_event_selector(self, event_label, event_combobox, combobox_button):
+    #     evtrace = utils.get_object_info(self.controller.session, Race_Heat_Schedule, competition_id=self.controller.competition_id)
+    #     event_race = set(row.event for row in evtrace)
+    #     values = [row for row in event_race]
+    #     values.sort()
+    #     # event_text = tk.StringVar()
+
+    #     event_label.config(text='Select the event')
+    #     event_combobox['values'] = values
+
+    #     # values = None
+
+    #     combobox_button.config(text='Select', command=self.select_event)
 
     def insert_text(self, widget, text):
         # widget = getattr(self, textbox)
