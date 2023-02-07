@@ -1,6 +1,5 @@
-#import sqlite3
+import sqlite3
 from sqlalchemy import create_engine, Float, Table, Column, Integer, String, MetaData, Date, Time, Boolean, ForeignKey
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 import toml
 import pandas as pd
@@ -99,7 +98,7 @@ race = Table(
     'race', meta,
     Column('id', Integer, primary_key = True),
     Column('rs_id', Integer, ForeignKey('race_style.id'), nullable=False),
-    Column('name', String(15)),
+    Column('name', String(20)),
     Column('distance', Integer),
     Column('team', Boolean),
 )
@@ -134,7 +133,7 @@ race_heat_schedule = Table(
     Column('heat_id', Integer, ForeignKey('heat.id'), nullable=False),
     Column('competition_id', Integer, ForeignKey('competition.id'), nullable=False),
     Column('event', Integer),
-    Column('name', String(50)),
+    Column('name', String(100)),
     Column('total_skaters', Integer),
     Column('team_race', Boolean),
 )
@@ -152,7 +151,7 @@ race_heat_result = Table(
     'race_heat_result', meta,
     Column('id', Integer, primary_key = True),
     Column('rhs_id', Integer, ForeignKey('race_heat_schedule.id'), nullable=False),
-    Column('timestamp', Time)
+    Column('timestamp', String)
 )
 
 race_heat_result_detail = Table(
@@ -166,7 +165,7 @@ race_heat_result_detail = Table(
     Column('ag_id', Integer, ForeignKey('age_group.id'), nullable=False),
     Column('gender_id', Integer, ForeignKey('gender.id'), nullable=False),
     Column('time_type', String),
-    Column('time', Time, nullable=True),
+    Column('time', String, nullable=True),
     Column('time_in_seconds', Float, nullable=True),
     Column('rank', Integer, nullable=True),
 )
@@ -190,7 +189,7 @@ race_age_group_result_detail = Table(
     Column('rhrd_id', Integer, ForeignKey('race_heat_result_detail.id'), nullable=False),
     Column('time_in_seconds', Float, nullable=True), #in seconds
     Column('rank', Integer, nullable=True),
-    Column('score', float, nullable=True),
+    Column('score', Float, nullable=True),
 )
 
 competition_age_group_result = Table(
@@ -235,8 +234,8 @@ def populate_db():
     age_group_db.to_sql('age_group', engine, index=False, if_exists='append')
     heat_db.to_sql('heat', engine, index=False, if_exists='append')
     race_style_db.to_sql('race_style', engine, index=False, if_exists='append')
-    state_db.to_sql('State', engine, index=False, if_exists='append')
-    country_db.to_sql('Country', engine, index=False, if_exists='append')
+    state_db.to_sql('state', engine, index=False, if_exists='append')
+    country_db.to_sql('country', engine, index=False, if_exists='append')
     gender_db.to_sql('gender', engine, index=False, if_exists='append')
     race_db.to_sql('race', engine, index=False, if_exists='append')
     age_group_class_db.to_sql('age_group_class', engine, index=False, if_exists='append')
@@ -249,10 +248,10 @@ def populate_db():
 
 
 if __name__=="__main__":
-    with open('config/config.toml', 'r') as config_value:
-        config = toml.load(config_value)
-    engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")
-    # engine = create_engine('sqlite:///skatecompetition.db')
+    # with open('config/config.toml', 'r') as config_value:
+    #     config = toml.load(config_value)
+    # engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")
+    engine = create_engine('sqlite:///skatecompetition.db')
     if not database_exists(engine.url):
         create_database(engine.url)
     

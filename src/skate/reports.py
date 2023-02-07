@@ -1,26 +1,9 @@
 from sqlalchemy.engine.base import Engine
 import pandas as pd
-from sqlalchemy import exists, and_
+from sqlalchemy import and_
 from sqlalchemy.orm import sessionmaker, aliased
-from skate.model import *
-from sqlalchemy import select, exists, and_
-# from weasyprint import HTML
-
-AG = aliased(Age_Group)
-AGC = aliased(Age_Group_Class)
-
-CS = aliased(Competition_Skater)
-CAGR = aliased(Competition_Age_Group_Result)
-CAGRD = aliased(Competition_Age_Group_Result_Detail)
-
-RHS = aliased(Race_Heat_Schedule)
-RHR = aliased(Race_Heat_Result)
-RHRD = aliased(Race_Heat_Result_Detail)
-RAGR = aliased(Race_Age_Group_Result)
-RHSD = aliased(Race_Heat_Schedule_Detail)
-RAGRD = aliased(Race_Age_Group_Result_Detail)
-RS = aliased(Race_Style)
-
+from models.model import *
+from models.aliases import *
 
 def prep_session(engine: Engine) -> sessionmaker:
     Session = sessionmaker(bind=engine)
@@ -87,7 +70,7 @@ def generate_event_schedule_list_report(competition_id: int, event: int, report_
         .order_by(RHRD.time.desc())\
         .all()
     report = pd.DataFrame(report, columns=report_cols)
-    report['Time'] = report['Time'].apply(convert_time_to_string)
+    # report['Time'] = report['Time'].apply(convert_time_to_string)
     event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}'
     title_row = pd.DataFrame({'ID': event_schedule_name, 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
     empty_row = pd.DataFrame({col: '' for col in report_cols}, index=[0])
@@ -104,13 +87,14 @@ def generate_event_schedule_list_report(competition_id: int, event: int, report_
             .order_by(RHRD.time.desc())\
             .all()
         report = pd.DataFrame(report, columns=report_cols)
-        report['Time'] = report['Time'].apply(convert_time_to_string)
+        # report['Time'] = report['Time'].apply(convert_time_to_string)
         # report = pd.read_sql_query(qry, engine)
         event_schedule_name = f'Event {event} Result for Age Group {low_div_name}-2-{high_div_name}-{gender_name}'
         title_row = pd.DataFrame({'ID': event_schedule_name, 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
     generate_report(report_name, report_path, reports)
+    session.close()
 
 def generate_age_group_report_name(competition_id: int, ag_id: int, race_id: int, gender_id: int, engine: Engine) -> str:
     session = prep_session(engine)
@@ -118,6 +102,7 @@ def generate_age_group_report_name(competition_id: int, ag_id: int, race_id: int
     gender_name = session.query(Gender).where(Gender.id == gender_id).first().name
     race_name = session.query(Race).where(Race.id == race_id).first().name
     competition_name = session.query(Competition).where(Competition.id == competition_id).first().name
+    session.close()
     return f"{competition_name} {gender_name.upper()} {age_group_name.upper()} {race_name}"
 
 def generate_age_group_report(competition_id: int, event: int, report_path: str, engine: Engine) -> None:
@@ -140,9 +125,9 @@ def generate_age_group_report(competition_id: int, event: int, report_path: str,
             .outerjoin(Club, Club.id == Skater.club_id)\
             .outerjoin(RHR, RHR.id == RHRD.rhr_id)\
             .outerjoin(RHS, RHS.id == RHR.rhs_id)\
-            .fiter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).all()
+            .filter(and_(RAGRD.ragr_id == ragr_id, RHS.event == event)).order_by(RAGRD.rank).all()
         report = pd.DataFrame(report, columns=report_cols)
-        report['Time'] = report['Time'].apply(convert_time_to_string)
+        # report['Time'] = report['Time'].apply(convert_time_to_string)
         rdr = session.query(RAGR.race_id, RAGR.gender_id, RAGR.ag_id).where(RAGR.id == ragr_id).first()
         race_id = rdr.race_id
         gender_id =rdr.gender_id
@@ -151,6 +136,7 @@ def generate_age_group_report(competition_id: int, event: int, report_path: str,
         title_row = pd.DataFrame({'Place': age_group_result_name, 'ID': '', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':'', 'Score': ''}, index=[0])
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True) 
+    session.close()
 
     generate_report(report_name, report_path, reports)  
 
@@ -173,9 +159,10 @@ def generate_race_heat_report(competition_id: int, event: int, report_path: str,
         title_row = pd.DataFrame({'Place': name, 'ID': '', 'Lane':'', 'Last Name':'', 'First Name':'', 'Aff':'', 'Time':''}, index=[0])
         report_col = ['Place', 'ID', 'Lane', 'Last Name', 'First Name', 'Aff', 'Time']
         report = pd.DataFrame(report_lst, columns=report_col)
-        report['Time'] = report['Time'].apply(convert_time_to_string)
+        # report['Time'] = report['Time'].apply(convert_time_to_string)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
+    session.close()
     generate_report(report_name, report_path, reports)
 
 def generate_competition_age_group_report(competition_id: int, report_path: str, engine: Engine) -> None:
@@ -195,5 +182,6 @@ def generate_competition_age_group_report(competition_id: int, report_path: str,
         report = pd.DataFrame(report, columns=report_cols)
         empty_row = pd.DataFrame({col: '' for col in report.columns}, index=[0])
         reports = pd.concat([reports, title_row, report, empty_row], ignore_index=True)
+    session.close()
     generate_report(report_name, report_path, reports)     
  

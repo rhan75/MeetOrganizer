@@ -1,33 +1,37 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .baselayer import BaseLayout
 from skate import reports
+from skate import utils
+from models.model import *
 
-class GenerateNextScheduleListLayout(BaseLayout):
-    def __init__(self, root, main_frame, engine):
-        super().__init__(root, main_frame, engine)
+class GenerateNextScheduleListLayout(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
         self.create_widgets()
         self.low_age_group = None
         self.high_age_group = None
         self.age_group_range = None
+        self.age_group_low_name = None
+        self.age_group_high_name = None
 
     def create_widgets(self):
 
-        self.clear_all()
-        self.clear()
+        # self.clear_all()
+        # self.clear()
 
         comp_text = tk.StringVar()
 
-        self.title_label = tk.Label(self.main_frame, text='Generate Next Schedule List', font=('helvetica', 24))
+        self.title_label = tk.Label(self, text='Generate Next Schedule List', font=('Arial', 24))
         self.title_label.grid(column=0, row=0, sticky='nsew')
 
-        self.status_text = tk.Text(self.main_frame, height=1)
+        self.status_text = tk.Text(self, height=1)
         self.status_text.grid(column=0, row=1, sticky='nsew')
-        self.insert_text('status_text', 'Ready to generate event results for age_groups')
+        self.controller.insert_text(self.status_text, 'Ready to generate event results for age_groups')
         
 
-        self.comp_frame = ttk.Frame(self.main_frame)
+        self.comp_frame = ttk.Frame(self)
         self.comp_frame.grid(column=0, row=2, sticky='nsew')
 
 
@@ -38,78 +42,113 @@ class GenerateNextScheduleListLayout(BaseLayout):
         
         self.comp_combobox.grid(column=1, row=2, sticky='nsew')
         comp_text.set('select competition')
-        self.comp_combobox['values'] = [row.name for row in self.competition]
+        self.comp_combobox['values'] = [row.name for row in self.controller.competitions]
         # self.comp_combobox['values'] = self.competition['name'].to_list()
 
-        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
+        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=lambda: self.controller.select_competition(self.comp_combobox, self.status_text, self.show_event_selector))
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
-        self.button_frame = ttk.Frame(self.main_frame)
+        self.button_frame = ttk.Frame(self)
         self.button_frame.grid(column=0, row=6, sticky='nsew')
 
         #adding submit / export / clear / close buttons
-        self.button_submit = ttk.Button(self.button_frame, text='submit', command=self.generate_report)
-        self.button_submit.grid(column=0, row=6, sticky='nsew')
+        self.button_submit = ttk.Button(self.button_frame, text='Submit', command=self.generate_report)
+        self.button_submit.grid(column=0, row=2, sticky='nsew')
 
-        self.button_clear = ttk.Button(self.button_frame, text='clear', command=self.reload_frame)
-        self.button_clear.grid(column=1, row=6, sticky='nsew')
+        self.button_clear = ttk.Button(self.button_frame, text='Clear', command=self.clear_all)
+        self.button_clear.grid(column=1, row=2, sticky='nsew')
+    
+        self.button_main = ttk.Button(self.button_frame, text='Main', command=lambda: self.controller.show_frame("MainScreenLayout"))
+        self.button_main.grid(column=2, row=2, sticky='nsew')
 
-        self.button_close = ttk.Button(self.button_frame, text='close', command=self.root.destroy)
-        self.button_close.grid(column=2, row=6, sticky='nsew')
-
-    def reload_frame(self):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy
-        self.create_widgets()
+        self.button_close = ttk.Button(self.button_frame, text='Close', command=self.controller.destroy)
+        self.button_close.grid(column=3, row=2, sticky='nsew')
 
     def generate_report(self):
-        reports.generate_event_schedule_list_report(self.competition_id, self.event, self.folder_name, self.age_group_range, self.engine)
-        # self.competition_name = self.competition[self.competition['id']==self.competition_id]['name'][0]
-        msg = f'Result for event {self.event} from {self.competition_name} has been generated in {self.folder_name}'
-        self.insert_text('status_text', msg)
+        reports.generate_event_schedule_list_report(self.controller.competition_id, self.controller.event, self.controller.directory, self.age_group_range, self.controller.engine)
+        msg = f'Result for event {self.controller.event} from {self.controller.competition_name} has been generated in {self.controller.directory}'
+        self.controller.insert_text(self.status_text, msg)
     
-    def select_competition(self):  
-        self.competition_name =  self.comp_combobox.get()
-        #print(self.competition_name)
-        if self.competition_name is not None:
-            # self.competition_id = self.competition[self.competition['name']==self.competition_name].iloc[0]['id']
-            self.competition_id = self.session.query(self.Competition).where(self.Competition.name==self.competition_name).first().id
-        
-            event_race = self.session.query(self.RHS.event).where(self.RHS.competition_id==self.competition_id).distinct().all()
-            # event_race = pd.read_sql_query(f'select distinct event from race_heat_schedule where competition_id = {self.competition_id};', self.engine)
-            event_text = tk.StringVar()
+    # def select_competition(self, comp_combobox, text_box):  
+    #     self.controller.competition_name = comp_combobox.get()
+    #     #print(self.competition_name)
+    #     if self.controller.competition_name is not None:
+    #         self.controller.competition_id = utils.get_object_info(self.controller.session, Competition, name=self.controller.competition_name)[0].id
+    #         self.show_event_selector()
+            
+    #     else:
+    #         msg = 'please select the competition.'
+    #         self.controller.insert_text(text_box, msg)
+
+    # def call_show_event_selector(self):
+    #     self.event_frame = ttk.Frame(self)
+    #     self.event_frame.grid(column=0, row=3, sticky='nsew')
+    #     event_text = tk.StringVar()
+
+    #     self.select_event_label = tk.Label(self.comp_frame)
+    #     self.select_event_label.grid(column=0, row=3, sticky='nsew')
+
+    #     self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
+
+    #     self.event_combobox.grid(column=1, row=3, sticky='nswe')
+    #     event_text.set('Select age groups')
+    #     self.event_combobox_button = ttk.Button(self.comp_frame)
+    #     self.event_combobox_button.grid(column=2, row=3, sticky='w')
+    #     self.controller.show_event_selector(self.select_event_label, self.event_combobox, self.event_combobox_button)
+
+    def show_event_selector(self):#, event_frame, event_label, event_combobox, combobox_button):
+        evtrace = utils.get_object_info(self.controller.session, Race_Heat_Schedule, competition_id=self.controller.competition_id)
+        event_race = set(row.event for row in evtrace)
+        values = [row for row in event_race]
+        values.sort()
+        event_text = tk.StringVar()
 
 
-            self.event_frame = ttk.Frame(self.main_frame)
-            self.event_frame.grid(column=0, row=3, sticky='nsew')
+        self.event_frame = ttk.Frame(self)
+        self.event_frame.grid(column=0, row=3, sticky='nsew')
+        # event_label.config(text='Select the event')
+        # event_combobox['values'] = values
 
 
-            self.select_event_label = tk.Label(self.comp_frame,text='select the event')
-            self.select_event_label.grid(column=0, row=3, sticky='nsew')
+        self.select_event_label = tk.Label(self.event_frame,text='select the event')
+        self.select_event_label.grid(column=0, row=3, sticky='nsew')
 
-            self.event_combobox = ttk.Combobox(self.comp_frame, textvariable=event_text)
-            # values = event_race['event'].to_list() #event value
-            values = [row.event for row in event_race]
-            values.sort()
-            self.event_combobox['values'] = values
-            values = None
-            self.event_combobox.grid(column=1, row=3, sticky='nswe')
-            event_text.set('select competition')
+        self.event_combobox = ttk.Combobox(self.event_frame, textvariable=event_text)
+        # values = event_race['event'].to_list() #event value
 
-            self.event_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_event)
-            self.event_combobox_button.grid(column=2, row=3, sticky='w')
-        else:
-            msg = 'please select the competition.'
-            self.insert_text('status_text', msg)
+        self.event_combobox['values'] = values
+        values = None
+        self.event_combobox.grid(column=1, row=3, sticky='nswe')
+        event_text.set('Select the event')
+        self.event_combobox_button = ttk.Button(self.event_frame, text='select', command=lambda: self.controller.select_event(self.event_combobox, self.status_text, self.show_age_group_selector))
+        self.event_combobox_button.grid(column=2, row=3, sticky='w')
+        # combobox_button.config(text='Select', command=self.select_event)
 
+
+    def clear_all(self):
+        self.controller.clear_all()
+        self.low_age_group = None
+        self.high_age_group = None
+        self.age_group_range = None
+        self.age_group_low_name = None
+        self.age_group_high_name = None
+        self.controller.insert_text(self.status_text, 'Ready to generate event results for age_groups')
+    
     def select_event(self):
-        self.event = self.event_combobox.get()
-        age_group = self.session.query(self.AG.id, self.AG.name).all()
+        self.controller.event = self.event_combobox.get()
 
-        # age_group = pd.read_sql_query('select id, name from age_group;', con=self.engine)
-        
-        self.age_group_frame = ttk.Frame(self.main_frame)
+        if self.controller.event is not None:
+            self.show_age_group_selector()
+        else:
+            msg = 'please select the event.'
+            self.controller.insert_text(self.status_text, msg)
+
+
+    def show_age_group_selector(self):
+        age_group = utils.get_object_info(self.controller.session, Age_Group)
+
+        self.age_group_frame = ttk.Frame(self)
         self.age_group_frame.grid(column=0, row=4, sticky='nsew')
 
 
@@ -134,18 +173,26 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.age_group_combobox_button = ttk.Button(self.age_group_frame,text='select', command=self.select_age_group)
         self.age_group_combobox_button.grid(column=3, row=4, sticky='nsew')
 
+
     def select_age_group(self):
-        # age_group = pd.read_sql_query('select id, name from age_group;', con=self.engine)
-        # age_group = self.session.query(self.AG.id, self.AG.name).all()
-        # low = age_group[age_group['name']== self.age_group_low_combobox.get()].head(1)
-        self.low_age_group = self.session.query(self.AG.id).where(self.AG.name == self.age_group_low_combobox.get()).first().id
-        # high = age_group[age_group['name']== self.age_group_high_combobox.get()].head(1)
-        self.high_age_group = self.session.query(self.AG.id).where(self.AG.name == self.age_group_high_combobox.get()).first().id
-        # self.low_age_group = low['id'].iloc[0]
-        # self.high_age_group = high['id'].iloc[0]
+        self.age_group_low_name = self.age_group_low_combobox.get()
+        self.age_group_high_name = self.age_group_high_combobox.get()
+
+        if (self.age_group_high_name is not None) and (self.age_group_low_name is not None):
+            self.show_report_folder_selector()
+        else:
+            msg = 'please select the age group info.'
+            self.controller.insert_text(self.status_text, msg)
+
+
+    
+    def show_report_folder_selector(self):
+        self.low_age_group = utils.get_object_info(self.controller.session, Age_Group, name=self.age_group_low_name)[0].id
+        self.high_age_group = utils.get_object_info(self.controller.session, Age_Group, name=self.age_group_high_name)[0].id
+
         self.age_group_range = {'low_age_group': {'name':self.age_group_low_combobox.get(), 'ag_id':self.low_age_group}, 'high_age_group': {'name':self.age_group_high_combobox.get(), 'ag_id':self.high_age_group}}
         
-        self.report_frame = ttk.Frame(self.main_frame)
+        self.report_frame = ttk.Frame(self)
         self.report_frame.grid(column=0, row=5, sticky='nsew')
 
 
@@ -155,5 +202,5 @@ class GenerateNextScheduleListLayout(BaseLayout):
         self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
         self.report_text.grid(column=1, row=5, sticky='nsew')
         # self.schedule_text.pack(side='left')
-        self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.select_folder('report_text'))
+        self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.controller.select_folder(self.report_text))
         self.browse_button.grid(column=2, row=5, sticky='nsew')
