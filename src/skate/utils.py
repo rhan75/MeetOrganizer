@@ -305,7 +305,7 @@ def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: E
             rank = int(rank)
             status_id = get_object_info(session, Status, name='finished')[0].id
             time_string = each_result[1]['time']
-            print(type(time_string), time_string)
+            # print(type(time_string), time_string)
             time_dict = format_time(time_string)
             time_in_seconds = time_dict['time_in_seconds']
             time_value = time_dict['time_value']
