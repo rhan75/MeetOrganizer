@@ -3,6 +3,7 @@ from tkinter import ttk
 import os
 
 from skate import utils
+from models.model import *
 
 class ImportResultLayout(tk.Frame):
     def __init__(self, parent, controller):

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from skate import utils
+from models.model import *
 # from connection import create_connection
 
 class ImportScheduleLayout(tk.Frame):
