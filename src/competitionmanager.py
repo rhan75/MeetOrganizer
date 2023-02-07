@@ -10,9 +10,9 @@ def main(engine):
 
 
 if __name__=="__main__":
-    config_file = '/home/rhan/codes/dev/Skating/MeetOrganizer/config/config.toml'
-    with open(config_file, 'r') as conf:
-        config = toml.load(conf)
-    engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")
-
+    # config_file = '/home/rhan/codes/dev/Skating/MeetOrganizer/config/config.toml'
+    # with open(config_file, 'r') as conf:
+    #     config = toml.load(conf)
+    # engine = create_engine(f"{config['database']['protocol']}://{config['auth']['username']}:{config['auth']['password']}@{config['server']['host']}:{config['database']['port']}/{config['database']['db']}")
+    engine = create_engine('sqlite:///skatecompetition.db')
     main(engine)

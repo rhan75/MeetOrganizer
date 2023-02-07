@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+# from dataclasses import dataclass
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import exists, and_
 from sqlalchemy.orm import sessionmaker, aliased
@@ -6,6 +6,7 @@ from sqlalchemy.orm import decl_api, session
 import pandas as pd
 from datetime import timedelta, date, datetime
 from models.model import *
+from models.aliases import *
 
 def is_valid_time(time_string):
     '''
@@ -250,6 +251,7 @@ def get_heat_result(result_file: str) -> dict:
     else:
         time_type = 'automatic'
     timestamp = pd.to_datetime(timestamp).strftime('%H:%M:%S')
+    # timestamp = datetime.strptime(timestamp, '%H:%M:%S').time()
     heat_result['time_type'] = time_type
     heat_result['timestamp'] = timestamp
     return heat_result
@@ -280,7 +282,10 @@ def format_time(time_string: str) -> dict:
         time_in_seconds = (time_datetime.minute *60) + time_datetime.second + (time_datetime.microsecond/1000000)
     else:
         time_in_seconds = float(time_string)
-    return {'time_in_seconds': time_in_seconds, 'time_value':timedelta(seconds=time_in_seconds)}
+    # time_value = timedelta(seconds=time_in_seconds)
+    minutes, seconds = divmod(time_in_seconds, 60)
+    time_value = "{:02d}:{:06.3f}".format(int(minutes), seconds)
+    return {'time_in_seconds': time_in_seconds, 'time_value':time_value}
 
 def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: Engine) -> None:  # Checked
     session = prep_session(engine=engine)
@@ -300,6 +305,7 @@ def create_race_heat_result_detail(result_file: str, rhr_result: dict, engine: E
             rank = int(rank)
             status_id = get_object_info(session, Status, name='finished')[0].id
             time_string = each_result[1]['time']
+            print(type(time_string), time_string)
             time_dict = format_time(time_string)
             time_in_seconds = time_dict['time_in_seconds']
             time_value = time_dict['time_value']
@@ -379,7 +385,7 @@ def rank_race_age_group_result(competition_id: int, event: int, engine: Engine) 
     ragr_ids = [ragr_id[0] for ragr_id in ragr_id_df]
     ranking_col = ['ragrd_id', 'ragr_id', 'rhrd_id', 'time']
     for ragr_id in ragr_ids: #For all races taken place for divisions and genders, iterate and get race_age_group_result ID
-        ranking = session.query(RAGRD.id, RAGRD.ragr_id, RHRD.id, RHRD.time).outerjoin(RHRD, RHRD.id==RAGRD.rhrd_id)\
+        ranking = session.query(RAGRD.id, RAGRD.ragr_id, RHRD.id, RHRD.time_in_seconds).outerjoin(RHRD, RHRD.id==RAGRD.rhrd_id)\
             .outerjoin(RHR, RHR.id == RHRD.rhr_id).outerjoin(RHS, RHS.id==RHR.rhs_id)\
             .where(and_(RHS.competition_id == competition_id, RHS.event == event, RAGRD.ragr_id == ragr_id, RAGRD.time_in_seconds != None)).all()
         if len(ranking) > 0:
