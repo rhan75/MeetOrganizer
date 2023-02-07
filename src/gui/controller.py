@@ -17,6 +17,7 @@ from gui.agegroupeventresultlayout import GenerateAgeGroupEventResultLayout
 from gui.competitionagegroupresultlayout import GenerateCompetitionAgeGroupResultLayout
 
 from models.model import *
+from models.aliases import *
 from skate import utils
 
 
@@ -198,3 +199,21 @@ class App(tk.Tk):
         self.directory = askdirectory()
         self.insert_text(textbox, self.directory)
 
+    # def show_report_folder_selector(self):
+    #     self.low_age_group = utils.get_object_info(self.controller.session, Age_Group, name=self.age_group_low_name)[0].id
+    #     self.high_age_group = utils.get_object_info(self.controller.session, Age_Group, name=self.age_group_high_name)[0].id
+
+    #     self.age_group_range = {'low_age_group': {'name':self.age_group_low_combobox.get(), 'ag_id':self.low_age_group}, 'high_age_group': {'name':self.age_group_high_combobox.get(), 'ag_id':self.high_age_group}}
+        
+    #     self.report_frame = ttk.Frame(self)
+    #     self.report_frame.grid(column=0, row=5, sticky='nsew')
+
+
+    #     self.report_label = tk.Label(self.report_frame,text='select the path')
+    #     self.report_label.grid(column=0, row=5, sticky='nsew')
+
+    #     self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
+    #     self.report_text.grid(column=1, row=5, sticky='nsew')
+    #     # self.schedule_text.pack(side='left')
+    #     self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.controller.select_folder(self.report_text))
+    #     self.browse_button.grid(column=2, row=5, sticky='nsew')
