@@ -4,6 +4,7 @@ from tkinter import ttk
 from skate import reports
 from skate import utils
 from models.model import *
+from models.aliases import *
 
 
 class GenerateEventHeatResultLayout(tk.Frame):
@@ -39,7 +40,7 @@ class GenerateEventHeatResultLayout(tk.Frame):
         self.comp_combobox['values'] = [row.name for row in self.controller.competitions]
         # self.comp_combobox['values'] = self.competition['name'].to_list()
 
-        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=self.select_competition)
+        self.comp_combobox_button = ttk.Button(self.comp_frame, text='select', command=lambda: self.controller.select_competition(self.comp_combobox, self.status_text, self.show_event_selector))
         self.comp_combobox_button.grid(column=2, row=2, sticky='nsew')
         
         
@@ -104,8 +105,50 @@ class GenerateEventHeatResultLayout(tk.Frame):
             msg = 'please select the competition.'
             self.insert_text('status_text', msg)
 
-    def select_event(self):
-        self.controller.event = self.event_combobox.get()
+    def show_event_selector(self):#, event_frame, event_label, event_combobox, combobox_button):
+        evtrace = utils.get_object_info(self.controller.session, Race_Heat_Schedule, competition_id=self.controller.competition_id)
+        event_race = set(row.event for row in evtrace)
+        values = [row for row in event_race]
+        values.sort()
+        event_text = tk.StringVar()
+
+
+        self.event_frame = ttk.Frame(self)
+        self.event_frame.grid(column=0, row=3, sticky='nsew')
+        # event_label.config(text='Select the event')
+        # event_combobox['values'] = values
+
+
+        self.select_event_label = tk.Label(self.event_frame,text='select the event')
+        self.select_event_label.grid(column=0, row=3, sticky='nsew')
+
+        self.event_combobox = ttk.Combobox(self.event_frame, textvariable=event_text)
+        # values = event_race['event'].to_list() #event value
+
+        self.event_combobox['values'] = values
+        values = None
+        self.event_combobox.grid(column=1, row=3, sticky='nswe')
+        event_text.set('Select the event')
+        self.event_combobox_button = ttk.Button(self.event_frame, text='select', command=lambda: self.controller.select_event(self.event_combobox, self.status_text, self.show_report_folder_selector))
+        self.event_combobox_button.grid(column=2, row=3, sticky='w')
+        # combobox_button.config(text='Select', command=self.select_event)
+
+    # def select_event(self):
+    #     self.controller.event = self.event_combobox.get()
+
+    #     self.report_frame = ttk.Frame(self)
+    #     self.report_frame.grid(column=0, row=4, sticky='nsew')
+
+
+    #     self.report_label = tk.Label(self.report_frame,text='select the path')
+    #     self.report_label.grid(column=0, row=4, sticky='nsew')
+
+    #     self.report_text = tk.Text(self.report_frame,state='disabled',height=1)
+    #     self.report_text.grid(column=1, row=4, sticky='nsew')
+    #     # self.schedule_text.pack(side='left')
+    #     self.browse_button = ttk.Button(self.report_frame,text='browse', command=lambda: self.controller.select_folder(self.report_text))
+    #     self.browse_button.grid(column=2, row=4, sticky='nsew')
+    def show_report_folder_selector(self):
 
         self.report_frame = ttk.Frame(self)
         self.report_frame.grid(column=0, row=4, sticky='nsew')
