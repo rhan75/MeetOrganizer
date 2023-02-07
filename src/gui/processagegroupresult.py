@@ -69,7 +69,7 @@ class ProcessAgeGroupResultLayout(tk.Frame):
         utils.create_race_age_group_result(self.controller.competition_id, self.controller.event, self.controller.engine)
         # races = pd.read_sql_query(f'select distinct race_id from race_heat_schedule where competition_id = {self.competition_id} and event = {self.event};', self.engine)
         races = self.controller.session.query(self.controller.RHS.race_id).where(and_(self.controller.RHS.competition_id==self.controller.competition_id, self.controller.RHS.event==self.controller.event)).distinct().all()
-        print(races)
+        # print(races)
         for race in races:
             # race_id = each_race.iloc[0]
             utils.create_race_age_group_result_detail(self.controller.competition_id, self.controller.event, race.race_id, self.controller.engine)
