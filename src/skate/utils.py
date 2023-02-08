@@ -487,16 +487,5 @@ def rank_competition_age_group_result(competition_id: int, engine: Engine) -> No
                 session.commit()
     session.close()
 
-'''
-club: dict
-keys = ['state_id', 'country_id', 'us_based', 'name', 'abbreviation']
-'''
-    
 
-
-'''
-skater: dict
-keys = ['club_id', 'gender_id', 'clube_member_number', 'first_name', 'last_name', 'dob',
- 'ngb_member_number, 'ngb_name']
-'''
 
