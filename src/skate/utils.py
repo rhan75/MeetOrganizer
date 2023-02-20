@@ -1,6 +1,6 @@
 # from dataclasses import dataclass
 from sqlalchemy.engine.base import Engine
-from sqlalchemy import exists, and_
+from sqlalchemy import exists, and_, desc
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm import decl_api, session
 import pandas as pd
@@ -487,5 +487,69 @@ def rank_competition_age_group_result(competition_id: int, engine: Engine) -> No
                 session.commit()
     session.close()
 
+
+def rank_conflict_resolver(df: pd.DataFrame, competition_id:int, engine: Engine) -> pd.DataFrame:
+    '''
+    Steps: 
+    1. Determine duplicate rankings
+    2. Loop over duplicate rankings and get skaters for each dup rank
+    3. determine the longest distance race for dup rank skaters.
+    4. Calculate the relative ranking of the longest distance of each skater.
+    5. Determine the new ranking by (Current_rank + longest_distance_relatvie_rank) - 1
+    6. Update the current_rank 
+    '''
+
+    dup_ranking = df[df['rank'].duplicated()]
+    dup_ranking = dup_ranking['rank'].drop_duplicates()
+    conflict_ranking = {}
+    for current_rank in dup_ranking:
+        skaters = []
+        temp_df = df[df['rank'] == current_rank]
+        skaters = [row['skater_id'] for idx, row in temp_df.iterrows()]
+        conflict_ranking[current_rank] = skaters
+        longest_race_id = determine_longest_race(competition_id, skaters)
+        # Get the result of session.query for RAGRD with competition_id, race_id, event filter by skaters, rank 
+
+
+
+
+    
+    #Determine if how many different ranking exists
+    dup_count = dup_ranking['rank'].unique
+    if dup_count == 1:
+        for idx, dup in dup_ranking.iterrows():
+            #Determin the longest race of the competition
+            longest_event = longest_race(competition_id, dup.skater_id)
+            
+
+
+
+    #
+    fixed_df = pd.DataFrame()
+    return fixed_df
+    
+
+def determine_longest_race(competition_id: int, skater_ids: list) -> int:
+    '''
+    Step
+    1. Setr longest_race = 0
+    2. Loop over skater_ids.
+    3. select race.id, race.distance RHS left join RHSD left join Race filter by competition_id, skater_id
+    4. Order by race.distance descending and get the race.id of the first row
+    5. if race.distance of the first row is bigger than longest_race, assign longest_race = race.distance
+    6. Complete the for loop.
+    7. Return lognest_race
+    '''
+    longest_race = 0
+    longest_race_id = None
+    for skater_id in skater_ids:
+        race_distance = session.query(Race.id, Race.distance)\
+            .outerjoin(RHSD, RHSD.rhs_id == RHS.id).outerjoin(Race, Race.id == RHS.race_id)\
+            .filter(and_(RHS.competition_id==competition_id, RHRD.skater_id == skater_id))\
+            .distinct().order_by(desc(Race.distance)).first()
+        if race_distance.distance > longest_race:
+            longest_race = race_distance.distance
+            longest_race_id = race_distance.id
+    return longest_race_id
 
 
