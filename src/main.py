@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
-import toml
-from gui.controller import App
+# import toml
+# from gui.controller import App
+from controller.controller import App
 
 def main(engine):
     app = App(engine=engine)
