@@ -9,17 +9,14 @@ def prep_session(engine: Engine) -> sessionmaker:
     Session = sessionmaker(bind=engine)
     session = Session()
     return session
+
 '''
-Report Functions
+HTML String for Report
 '''
-def generate_report(report_name: str, report_path: str, report: pd.DataFrame) -> None:
-    html_file = f'{report_path}/{report_name}.html'
-    excel_file = f'{report_path}/{report_name}.xlsx'
-    report.to_excel(excel_file, index=False)
+def generate_html_string(report_name: str, report: pd.DataFrame) -> str:
     html = report.to_html(index=False)
-    title = """
-        <html>
-        <head>
+    title = f"<h4>{report_name}</h4>"
+    styling = """
         <style>
         thead {color: green;}
         tbody {color: black;}
@@ -29,21 +26,53 @@ def generate_report(report_name: str, report_path: str, report: pd.DataFrame) ->
         border: 1px solid black;
         }
         </style>
-        </head>
-        <body>
-
-        <h4>
-        """ + report_name + "</h4>"
-
-    end_html = """
-        </body>
-        </html>
         """
-    html = title + html + end_html
+    return f"<html><head>{styling}</head><body>{title}{html}</body></html>"
 
-    with open(html_file, 'w') as file:
+'''
+Report Functions
+'''
+
+def generate_report(report_name: str, report_path: str, report: pd.DataFrame) -> None:
+    html_file = f"{report_path}/{report_name}.html"
+    excel_file = f"{report_path}/{report_name}.xlsx"
+    report.to_excel(excel_file, index=False)
+    html = generate_html_string(report_name, report)
+    with open(html_file, "w") as file:
         file.write(html)
-    # HTML(html_file).write_pdf(pdf_file)
+
+# def generate_report(report_name: str, report_path: str, report: pd.DataFrame) -> None:
+#     html_file = f'{report_path}/{report_name}.html'
+#     excel_file = f'{report_path}/{report_name}.xlsx'
+#     report.to_excel(excel_file, index=False)
+#     html = report.to_html(index=False)
+#     title = """
+#         <html>
+#         <head>
+#         <style>
+#         thead {color: green;}
+#         tbody {color: black;}
+#         tfoot {color: red;}
+
+#         table, th, td {
+#         border: 1px solid black;
+#         }
+#         </style>
+#         </head>
+#         <body>
+
+#         <h4>
+#         """ + report_name + "</h4>"
+
+#     end_html = """
+#         </body>
+#         </html>
+#         """
+#     html = title + html + end_html
+
+#     with open(html_file, 'w') as file:
+#         file.write(html)
+#     # HTML(html_file).write_pdf(pdf_file)
 
 def convert_time_to_string(time_value):
     if time_value is None:
